@@ -120,12 +120,19 @@ def tcp_server():
 @app.route('/')
 def index(): return render_template('index.html')
 
+@app.route('/dashboard')
+def dashboard(): return render_template('dashboard.html')
+
 @app.route('/api/status')
 def get_status():
+    owner_filter = request.args.get('owner')
     with lock:
         devs = []
         for k, v in clients.items():
             info = v['data']['info']
+            # Only include device if it matches the owner ID
+            if owner_filter and info.get('Owner') != owner_filter: continue
+            
             devs.append({
                 'id': k,
                 'model': info.get('Model', '?'),
