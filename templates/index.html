@@ -3,42 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>GHOST::ACCESS</title>
+    <title>GHOST_OS::ACCESS</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Share Tech Mono', monospace;
         }
 
-        /* same exact colors as dashboard — black + red + green */
-        :root {
-            --bg: #0b0303;
-            --surface: #1a0e0e;
-            --card: #221212;
-            --primary-red: #ff3b3b;
-            --primary-green: #5eff9e;
-            --dark-red: #5e1a1a;
-            --dark-green: #1b4a2a;
-            --text: #e3dcdc;
-            --dim: #9e7a7a;
-            --border-red: #8b2a2a;
-            --border-green: #2f9e5a;
-            --glow-red: rgba(255, 50, 50, 0.4);
-            --glow-green: rgba(80, 255, 120, 0.5);
+        /* VAR WARNA SAMA DENGAN DASHBOARD */
+        :root { 
+            --bg: #050505; 
+            --surface: #0a0a0a; 
+            --primary: #00ff33; /* Ijo Stabilo */
+            --primary-glow: rgba(0, 255, 51, 0.2);
+            --danger: #ff003c;
+            --danger-glow: rgba(255, 0, 60, 0.2);
+            --text: #e0e0e0; 
+            --dim: #557755; 
         }
 
         body {
-            background: #0a0101;
+            background: var(--bg);
+            color: var(--text);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             margin: 0;
             padding: 16px;
-            background-image: radial-gradient(circle at 30% 20%, #2f130f 0%, #020000 100%);
+            /* Efek CRT Scanline sama persis dengan dashboard */
+            background-image: linear-gradient(rgba(0, 255, 51, 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0, 255, 51, 0.03) 1px, transparent 1px);
+            background-size: 20px 20px;
         }
 
         .login-container {
@@ -46,25 +46,33 @@
             max-width: 400px;
         }
 
+        /* KOTAK UTAMA (HACKER STYLE) */
         .login-card {
-            background: #140a0a;
-            border: 2px solid #bb4646;
-            border-radius: 48px;
-            padding: 32px 24px 40px 24px;
-            box-shadow: 0 20px 40px -15px #5e0000, inset 0 0 20px #2f0707, 0 0 30px #ff3b3b33;
-            background: linear-gradient(160deg, #1d0d0d, #0e0404);
+            background: var(--surface);
+            border: 1px solid var(--dim);
+            border-radius: 4px; /* Sudut tajam */
+            padding: 40px 24px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8), 0 0 30px rgba(0, 255, 51, 0.05);
             text-align: center;
-            backdrop-filter: blur(2px);
+            position: relative;
         }
 
-        /* logo besar, memenuhi lebar card, di atas kolom user id */
+        /* AKSEN SUDUT */
+        .login-card::before {
+            content:''; position:absolute; top:-1px; left:-1px; width:20px; height:20px;
+            border-top: 2px solid var(--primary); border-left: 2px solid var(--primary);
+        }
+        .login-card::after {
+            content:''; position:absolute; bottom:-1px; right:-1px; width:20px; height:20px;
+            border-bottom: 2px solid var(--primary); border-right: 2px solid var(--primary);
+        }
+
         .login-logo {
             width: 100%;
-            max-width: 280px;  /* proporsional tapi tetap besar */
-            margin: 0 auto 20px auto;  /* tengah, jarak bawah ke input */
-            filter: drop-shadow(0 0 25px #5eff9e) drop-shadow(0 0 45px #ff3b3b);
+            max-width: 200px; /* Dikecilin dikit biar proporsional dengan tema kotak */
+            margin: 0 auto 25px auto;
+            filter: drop-shadow(0 0 15px var(--primary-glow));
             animation: softPulse 2.5s infinite alternate;
-            /* optimasi loading: ukuran wajar, preload dengan fetch priority */
             content-visibility: auto;
         }
 
@@ -72,83 +80,79 @@
             width: 100%;
             height: auto;
             display: block;
-            border-radius: 20px; /* sedikit lembut */
+            border-radius: 2px;
+            border: 1px solid #111;
         }
 
         .login-title {
-            color: #ff9f9f;
-            font-size: 1.8rem;
-            letter-spacing: 6px;
-            font-weight: 300;
-            text-shadow: 0 0 8px #ff4f4f, 0 0 16px #5eff99;
-            margin-bottom: 20px;
+            color: var(--primary);
+            font-size: 1.5rem;
+            letter-spacing: 4px;
+            text-shadow: 0 0 10px var(--primary-glow);
+            margin-bottom: 25px;
             text-transform: uppercase;
         }
 
-        .login-title i {
-            color: #ff5e5e;
-            margin-right: 8px;
-        }
+        .login-title i { margin-right: 8px; }
 
-        /* kolom masukin user id */
+        /* INPUT FIELD SYSTEM STYLE */
         .input-field {
             width: 100%;
-            background: #2b1616;
-            border: 2px solid #cf5a5a;
-            border-radius: 60px;
-            padding: 16px 24px;
-            color: #ffd9b0;
-            font-size: 1.1rem;
+            background: #000;
+            border: 1px solid #333;
+            border-radius: 2px;
+            padding: 16px;
+            color: var(--primary);
+            font-size: 1.2rem;
             text-align: center;
             outline: none;
             margin-bottom: 24px;
-            transition: 0.15s;
-            font-family: 'Inter', monospace;
-            letter-spacing: 1px;
+            transition: 0.3s;
+            letter-spacing: 3px;
+            text-transform: uppercase;
         }
 
         .input-field:focus {
-            border-color: #5eff99;
-            box-shadow: 0 0 20px #5eff99, inset 0 0 10px #2a0a0a;
-            background: #331d1d;
+            border-color: var(--primary);
+            box-shadow: inset 0 0 10px var(--primary-glow), 0 0 10px var(--primary-glow);
         }
 
         .input-field::placeholder {
-            color: #a56767;
-            font-size: 0.95rem;
-            letter-spacing: 1px;
+            color: var(--dim);
+            font-size: 1rem;
+            letter-spacing: 2px;
         }
 
+        /* BUTTON ACTION SAMA DENGAN DASHBOARD */
         .auth-btn {
             background: transparent;
-            border: 3px solid #5eff99;
-            color: #d4ffd4;
-            padding: 16px 20px;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 15px 20px;
             width: 100%;
-            border-radius: 60px;
-            font-size: 1.5rem;
+            border-radius: 2px;
+            font-size: 1.2rem;
             font-weight: bold;
             cursor: pointer;
-            transition: 0.1s;
-            margin-top: 8px;
-            -webkit-tap-highlight-color: transparent;
-            background: linear-gradient(145deg, #1f3a2a, #0e1e16);
-            text-shadow: 0 0 5px #b3ffb3;
+            transition: 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
         }
 
-        .auth-btn:active {
-            transform: scale(0.97);
-            background: #5eff99;
-            color: black;
-            box-shadow: 0 0 50px #ff6262;
+        .auth-btn:hover {
+            background: var(--primary);
+            color: #000;
+            box-shadow: 0 0 20px var(--primary-glow);
         }
+        
+        .auth-btn:active { transform: scale(0.98); }
 
-        /* pop up loading bar — system style */
+        /* LOADING SYSTEM (POPUP) HACKER THEME */
         .system-popup {
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.95);
-            backdrop-filter: blur(10px);
+            background: rgba(0,0,0,0.9);
+            backdrop-filter: blur(5px);
             display: none;
             align-items: center;
             justify-content: center;
@@ -157,39 +161,38 @@
         }
 
         .popup-card {
-            background: #140a0a;
-            border: 3px solid #ff5e5e;
-            border-radius: 60px;
+            background: var(--surface);
+            border: 1px solid var(--primary);
+            border-radius: 4px;
             padding: 30px 20px;
             max-width: 360px;
             width: 100%;
             text-align: center;
-            box-shadow: 0 0 70px #ff4f4f;
+            box-shadow: 0 0 30px var(--primary-glow);
+            position: relative;
         }
 
         .popup-logo-small {
             width: 80px;
             margin: 0 auto 15px;
-            filter: drop-shadow(0 0 15px #5eff99);
+            filter: drop-shadow(0 0 15px var(--primary-glow));
         }
-
-        .popup-logo-small img {
-            width: 100%;
-        }
+        .popup-logo-small img { width: 100%; border-radius: 2px; }
 
         .popup-title {
-            color: #ffaeae;
-            font-size: 1.4rem;
+            color: var(--primary);
+            font-size: 1.2rem;
             margin-bottom: 20px;
             letter-spacing: 2px;
+            text-shadow: 0 0 5px var(--primary-glow);
         }
 
         .popup-bar {
             width: 100%;
-            height: 12px;
-            background: #2d1212;
-            border-radius: 40px;
-            border: 1px solid #aa3c3c;
+            height: 15px;
+            background: #000;
+            border-radius: 2px;
+            border: 1px solid #333;
             overflow: hidden;
             margin: 20px 0 12px;
         }
@@ -197,46 +200,42 @@
         .popup-fill {
             height: 100%;
             width: 0%;
-            background: linear-gradient(90deg, #ff3a3a, #6aff99, #ff3737);
-            box-shadow: 0 0 20px #5eff8c;
+            background: var(--primary);
+            box-shadow: 0 0 10px var(--primary);
             transition: width 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
         }
 
         .popup-status {
-            color: #9affb5;
-            font-family: monospace;
-            font-size: 1rem;
+            color: var(--text);
+            font-size: 0.9rem;
             display: flex;
             justify-content: space-between;
-            padding: 0 8px;
+            padding: 0 5px;
+            text-transform: uppercase;
         }
 
         .error-message {
-            color: #ff7a7a;
+            color: var(--danger);
             margin-top: 20px;
             font-size: 0.95rem;
             min-height: 24px;
-            font-weight: 400;
-            text-shadow: 0 0 6px red;
-        }
-
-        /* optimasi loading: preload image dengan fetchpriority high */
-        .login-logo img {
-            fetchpriority: "high";
+            text-shadow: 0 0 8px var(--danger-glow);
+            letter-spacing: 1px;
+            text-transform: uppercase;
         }
 
         @keyframes softPulse {
-            0% { filter: drop-shadow(0 0 5px #ff3b3b) drop-shadow(0 0 15px #5eff99); }
-            100% { filter: drop-shadow(0 0 35px #ff6565) drop-shadow(0 0 45px #5eff99); }
+            0% { filter: drop-shadow(0 0 5px rgba(0,255,51,0.2)); }
+            100% { filter: drop-shadow(0 0 20px rgba(0,255,51,0.6)); }
         }
+
+        .login-logo img { fetchpriority: "high"; }
     </style>
-    <!-- preload logo untuk akses lebih cepat -->
     <link rel="preload" as="image" href="https://i.ibb.co.com/mCr6hGfy/Gemini-Generated-Image-xp6maxxp6maxxp6m-1.png" fetchpriority="high">
 </head>
 <body>
     <div class="login-container">
         <div class="login-card">
-            <!-- logo besar di atas kolom user id, full width -->
             <div class="login-logo">
                 <img src="https://i.ibb.co.com/mCr6hGfy/Gemini-Generated-Image-xp6maxxp6maxxp6m-1.png" 
                      alt="GHOST EMBLEM" 
@@ -244,33 +243,32 @@
                      decoding="async">
             </div>
             <div class="login-title">
-                <i class="fas fa-skull"></i> User-ID
+                <i class="fas fa-terminal"></i> AUTHENTICATION
             </div>
-            <input type="text" class="input-field" id="userId" placeholder="ENTER USER ID" autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter') attemptLogin()">
-            <button class="auth-btn" onclick="attemptLogin()"><i class="fa-regular fa-keyboard"></i> AUTH</button>
+            <input type="text" class="input-field" id="userId" placeholder="ENTER UID" autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter') attemptLogin()">
+            <button class="auth-btn" onclick="attemptLogin()"><i class="fa-solid fa-bolt"></i> CONNECT</button>
             <div id="loginStatus" class="error-message"></div>
         </div>
     </div>
 
-    <!-- POP UP LOADING SYSTEM -->
     <div id="systemPopup" class="system-popup">
         <div class="popup-card">
             <div class="popup-logo-small">
                 <img src="https://i.ibb.co.com/mCr6hGfy/Gemini-Generated-Image-xp6maxxp6maxxp6m-1.png" alt="spinner" loading="lazy">
             </div>
-            <div class="popup-title">SYSTEM ACCESS</div>
+            <div class="popup-title">SYSTEM HANDSHAKE</div>
             <div class="popup-bar">
                 <div class="popup-fill" id="popupFill" style="width: 0%;"></div>
             </div>
             <div class="popup-status">
-                <span id="popupMsg">initializing...</span>
+                <span id="popupMsg">INITIALIZING...</span>
                 <span id="popupPercent">0%</span>
             </div>
         </div>
     </div>
 
     <script>
-        // hardcoded users.txt url
+        // HARDCODED DB URL - TIDAK DIUBAH
         const DB_URL = "https://raw.githubusercontent.com/MRSt3Ss/rat1/refs/heads/main/users.txt";
         const popup = document.getElementById('systemPopup');
         const popupFill = document.getElementById('popupFill');
@@ -278,18 +276,18 @@
         const popupPercent = document.getElementById('popupPercent');
         const loginStatus = document.getElementById('loginStatus');
 
-        // cek localStorage langsung
+        // Pengecekan sesi & Redirect langsung ke /dashboard
         if(localStorage.getItem('ghost_uid')) {
-            window.location.href = 'dashboard';  // redirect ke dashboard
+            window.location.href = '/dashboard';
         }
 
         function simulateLoading(callback) {
-            // reset
             popup.style.display = 'flex';
             let progress = 0;
             popupFill.style.width = '0%';
+            popupFill.style.background = 'var(--primary)'; // Reset warna jika error sebelumnya
             popupPercent.innerText = '0%';
-            popupMsg.innerText = 'handshake ...';
+            popupMsg.innerText = 'ESTABLISHING SECURE LINK...';
 
             const interval = setInterval(() => {
                 progress += 5;
@@ -298,32 +296,30 @@
                     clearInterval(interval);
                     popupFill.style.width = '100%';
                     popupPercent.innerText = '100%';
-                    popupMsg.innerText = 'verifying credentials';
+                    popupMsg.innerText = 'VERIFYING CREDENTIALS...';
                     setTimeout(() => {
-                        callback(); // lanjut ke validasi setelah loading kelar
+                        callback();
                     }, 200);
                 } else {
                     popupFill.style.width = progress + '%';
                     popupPercent.innerText = progress + '%';
-                    if (progress < 30) popupMsg.innerText = 'scanning id ...';
-                    else if (progress < 70) popupMsg.innerText = 'decrypting payload';
-                    else popupMsg.innerText = 'contacting shadow';
+                    if (progress < 30) popupMsg.innerText = 'SCANNING UID NODE...';
+                    else if (progress < 70) popupMsg.innerText = 'DECRYPTING PAYLOAD...';
+                    else popupMsg.innerText = 'CONTACTING SHADOW SERVER...';
                 }
             }, 40);
         }
 
         function attemptLogin() {
             const userId = document.getElementById('userId').value.trim();
-            loginStatus.innerText = ''; // bersihkan status
+            loginStatus.innerText = ''; 
 
             if (!userId) {
-                loginStatus.innerText = '>_ USER ID REQUIRED';
+                loginStatus.innerText = '>_ UID REQUIRED FOR ACCESS';
                 return;
             }
 
-            // tampilkan loading pop up
             simulateLoading(async () => {
-                // setelah loading bar selesai, lakukan fetch
                 try {
                     const res = await fetch(DB_URL + "?t=" + Date.now());
                     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -334,24 +330,24 @@
 
                     if (users.includes(userId)) {
                         popupMsg.innerText = 'ACCESS GRANTED';
-                        popupPercent.innerText = '✅';
+                        popupPercent.innerText = '[OK]';
                         localStorage.setItem('ghost_uid', userId);
                         setTimeout(() => {
-                            window.location.href = 'dashboard'; // redirect ke dashboard
+                            window.location.href = '/dashboard'; // Redirect spesifik ke /dashboard
                         }, 600);
                     } else {
-                        // gagal : tutup popup, tampilkan error
+                        // Error UI update
                         popup.style.display = 'none';
-                        loginStatus.innerText = '⛔ ACCESS DENIED: UNKNOWN ID';
+                        loginStatus.innerText = '[!] ACCESS DENIED: UNKNOWN UID';
+                        document.getElementById('userId').value = '';
                     }
                 } catch (e) {
                     popup.style.display = 'none';
-                    loginStatus.innerText = '⚠️ DATABASE ERROR: ' + e.message;
+                    loginStatus.innerText = '[!] DB_ERROR: ' + e.message;
                 }
             });
         }
 
-        // global supaya bisa dipanggil dari onclick
         window.attemptLogin = attemptLogin;
     </script>
 </body>
