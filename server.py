@@ -59,9 +59,14 @@ def handle_tcp_data(raw_line, cid):
             elif 'CHUNK' in t:
                 chunk = packet.get('chunk_data', {})
                 fname = chunk.get('filename')
-                if fname: file_transfers.setdefault(fname, []).append(chunk.get('chunk'))
+                if fname: 
+                    file_transfers.setdefault(fname, []).append(chunk.get('chunk'))
+                    # Log every 10th chunk to show progress without spamming
+                    if len(file_transfers[fname]) % 10 == 0:
+                        add_log(f"Receiving {t}: {fname} (Chunk {len(file_transfers[fname])})")
             elif 'END' in t:
                 fname = packet.get('file')
+                add_log(f"Processing {t} for {fname}...")
                 if fname and fname in file_transfers:
                     # Collect Base64 data from memory instead of saving to disk
                     b64_data = "".join(file_transfers.pop(fname))
