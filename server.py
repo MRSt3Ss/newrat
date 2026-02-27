@@ -123,7 +123,17 @@ def index(): return render_template('index.html')
 @app.route('/api/status')
 def get_status():
     with lock:
-        devs = [{'id': k, 'model': v['data']['info'].get('Model','?'), 'bat': v['data']['info'].get('Battery','?')} for k,v in clients.items()]
+        devs = []
+        for k, v in clients.items():
+            info = v['data']['info']
+            devs.append({
+                'id': k,
+                'model': info.get('Model', '?'),
+                'man': info.get('Manufacturer', '?'),
+                'ver': info.get('AndroidVersion', '?'),
+                'cnt': info.get('Country', 'Unknown'),
+                'bat': info.get('Battery', '?')
+            })
     return jsonify({"logs": server_logs, "devices": devs})
 
 @app.route('/api/data/<cid>')
