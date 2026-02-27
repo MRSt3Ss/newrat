@@ -312,7 +312,7 @@
         // ---------- AUTH CHECK ----------
         const uid = localStorage.getItem('ghost_uid');
         if (!uid) {
-            window.location.href = 'index.html';
+            window.location.href = '/';
             return;
         }
         document.getElementById('user-display').innerText = uid;
