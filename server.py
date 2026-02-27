@@ -139,6 +139,16 @@ def del_file():
             return jsonify({"status": "ok"})
     return jsonify({"status": "error"}), 404
 
+@app.route('/api/upload_wallpaper', methods=['POST'])
+def upload_wallpaper():
+    if 'file' not in request.files: return jsonify({"status": "no_file"}), 400
+    file = request.files['file']
+    if file.filename == '': return jsonify({"status": "no_filename"}), 400
+    filename = secure_filename("wallpaper_" + file.filename)
+    path = os.path.join('captured_images', filename)
+    file.save(path)
+    return jsonify({"status": "ok", "filename": filename})
+
 @app.route('/captured_images/<path:f>')
 def serve_img(f): return send_from_directory('captured_images', f)
 
