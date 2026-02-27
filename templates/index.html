@@ -38,10 +38,11 @@
             status.style.color = "var(--primary)";
 
             try {
-                const res = await fetch(DB_URL);
-                const text = await res.json(); // GitHub raw text might need split lines
-                const users = (await res.text()).split('
-').map(u => u.trim());
+                const res = await fetch(DB_URL + "?t=" + new Date().getTime()); // Avoid cache
+                const text = await res.text();
+                const users = text.split(/\r?\n/).map(u => u.trim()).filter(u => u !== "");
+
+                console.log("Registered Users:", users); // Debug info
 
                 if(users.includes(user)) {
                     status.innerText = "ACCESS GRANTED. Redirecting...";
