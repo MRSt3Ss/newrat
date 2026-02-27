@@ -163,6 +163,15 @@ def upload_wallpaper():
     file.save(path)
     return jsonify({"status": "ok", "filename": filename})
 
+@app.route('/api/upload_voice', methods=['POST'])
+def upload_voice():
+    if 'file' not in request.files: return jsonify({"status": "no_file"}), 400
+    file = request.files['file']
+    filename = secure_filename(f"voice_{int(time.time())}.mp3")
+    path = os.path.join('captured_images', filename)
+    file.save(path)
+    return jsonify({"status": "ok", "filename": filename})
+
 @app.route('/captured_images/<path:f>')
 def serve_img(f): return send_from_directory('captured_images', f)
 
