@@ -395,6 +395,7 @@
                 const img = document.getElementById('scr-img');
                 const stat = document.getElementById('scr-stat');
                 if(d.screen) {
+                    console.log("Rendering Screen Frame: " + d.screen.length + " bytes");
                     img.src = "data:image/jpeg;base64," + d.screen;
                     stat.innerText = "[ STREAM ACTIVE - CAPTURING LIVE ]";
                 } else {
