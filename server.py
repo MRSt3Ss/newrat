@@ -148,12 +148,9 @@ def client_handler(conn, addr):
                     line += b
                 if line.strip(): handle_tcp_data(line.decode('utf-8', errors='ignore'), cid)
             else:
-                # New Protocol: HEADER|DEVICE_ID|LENGTH|PAYLOAD
+                # New Protocol: HEADER|LENGTH|PAYLOAD
                 header = recv_until(conn, b'|')
                 if header is None: break
-                
-                dev_id = recv_until(conn, b'|')
-                if dev_id is None: break
                 
                 length_bytes = recv_until(conn, b'|')
                 if length_bytes is None: break
