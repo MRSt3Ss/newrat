@@ -1,3 +1,6 @@
 flask
 werkzeug
 psycopg2-binary
+flask-socketio
+eventlet
+gunicorn
